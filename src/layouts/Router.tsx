@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import {Route, Routes} from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import URL from "@/constants/url";
-import type {ItemRouteType} from "@/types/routes/router.type";
-import {USER_ROLE} from "@/constants/role";
+import type { ItemRouteType } from "@/types/routes/router.type";
+import { USER_ROLE } from "@/constants/role";
 
 import DefaultLayout from "./DefaultLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
@@ -21,6 +21,7 @@ import FoodSelection from "@/pages/booking/FoodSelection";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
+import Showtimes from "@/pages/showtimes";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -32,7 +33,7 @@ export const menuRouterItems: ItemRouteType[] = [
   },
   {
     key: URL.Showtimes,
-    components: <div className="p-20 text-center text-2xl text-white">Showtimes coming soon...</div>,
+    components: <Showtimes />,
     layout: "default",
     title: "Showtimes",
     isMenu: true,
