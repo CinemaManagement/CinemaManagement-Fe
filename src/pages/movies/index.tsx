@@ -1,7 +1,7 @@
 import {useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
 import {useAppSelector} from "@/store";
-import {UserRole, ShowingStatus} from "@/types/document";
+import {UserRole, ShowingStatus, MovieStatus} from "@/types/document";
 import type {Movie} from "@/types/document";
 import {movieApi} from "@/services/api/movieApi";
 import {Plus, Edit, Trash2, Star, ChevronLeft, ChevronRight, Clock} from "lucide-react";
@@ -167,8 +167,13 @@ const Movies = () => {
                 .map((movie) => (
                   <div
                     key={movie._id}
-                    className="group/list flex flex-col gap-8 rounded-[2rem] border border-white/3 bg-white/2 p-6 transition-all duration-300 hover:bg-white/5 sm:flex-row"
+                    className="group/list relative flex flex-col gap-8 rounded-[2rem] border border-white/3 bg-white/2 p-6 transition-all duration-300 hover:bg-white/5 sm:flex-row"
                   >
+                    {movie.status === MovieStatus.HIDDEN && (
+                      <span className="absolute top-6 right-6 rounded-md bg-red-700 px-2 py-1 text-sm text-white">
+                        Hidden
+                      </span>
+                    )}
                     <div
                       onClick={() => navigate(URL.MovieDetail.replace(":id", movie._id))}
                       className="aspect-2/3 w-full shrink-0 cursor-pointer overflow-hidden rounded-2xl shadow-lg sm:w-44"

@@ -117,7 +117,11 @@ export interface CinemaRoom {
   _id: string;
   roomName: string;
   status: CinemaRoomStatus;
-  seats: Seat[];
+  seats: {
+    NORMAL: string[];
+    VIP: string[];
+    COUPLE: string[];
+  };
 }
 
 export const ShowtimeStatus = {

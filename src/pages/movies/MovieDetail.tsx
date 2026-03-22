@@ -18,7 +18,6 @@ interface Showtime {
   _id: string;
   movieId: string;
   startTime: string;
-  endTime: string;
   status: string;
   pricingRule: {
     NORMAL: number;

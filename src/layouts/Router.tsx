@@ -23,6 +23,8 @@ import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import {UserRole} from "@/types/document";
 import FoodManagement from "@/pages/foods/FoodManagement";
+import RoomManagement from "@/pages/rooms/RoomManagement";
+import RoomForm from "@/pages/rooms/RoomForm";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -38,7 +40,16 @@ export const menuRouterItems: ItemRouteType[] = [
       <div className="p-20 text-center text-2xl text-white">Showtimes coming soon...</div>
     ),
     layout: "default",
+    roles: [UserRole.CUSTOMER],
     title: "Showtimes",
+    isMenu: true,
+  },
+  {
+    key: URL.AdminRooms,
+    components: <RoomManagement />,
+    roles: [UserRole.MANAGER],
+    layout: "default",
+    title: "Rooms",
     isMenu: true,
   },
   {
@@ -83,6 +94,7 @@ const detailRouterItems: ItemRouteType[] = [
   {key: URL.FoodSelection, components: <FoodSelection />, layout: "default"},
   {key: URL.Profile, components: <Profile />, layout: "default"},
   {key: URL.PaymentSuccess, components: <BookingSuccess />, layout: "default"},
+  {key: URL.AdminRoomAdd, components: <RoomForm />, layout: "default"},
 ];
 
 const allRouters = [...menuRouterItems, ...publicRouterItems, ...detailRouterItems];

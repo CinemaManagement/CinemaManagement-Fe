@@ -24,6 +24,10 @@ const URL = {
   AdminUsers: "/admin/users",
   AdminOrders: "/admin/orders",
   AdminReports: "/admin/reports",
+  AdminRooms: "/admin/rooms",
+  AdminRoomAdd: "/admin/rooms/add",
+  AdminRoomEdit: "/admin/rooms/edit/:id",
+  AdminRoomDetail: "/admin/rooms/:id",
 };
 
 export default URL;
