@@ -51,6 +51,7 @@ export const FoodStatus = {
 export type FoodStatus = (typeof FoodStatus)[keyof typeof FoodStatus];
 
 export interface FoodItem {
+  foodId: string;
   name: string;
   quantity: number;
 }
@@ -61,10 +62,11 @@ export interface Food {
   type: FoodType;
   price: number;
   description: string;
+  imageUrl?: string;
   status: FoodStatus;
   items?: FoodItem[];
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const SeatType = {

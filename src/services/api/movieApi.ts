@@ -7,6 +7,12 @@ export const movieApi = {
       method: 'GET',
     });
   },
+  getMoviesByManager: () => {
+    return request({
+      url: '/api/movies/all',
+      method: 'GET',
+    });
+  },
   createMovie: (data: Record<string, unknown>) => {
     return request({
       url: '/api/movies',
@@ -30,7 +36,13 @@ export const movieApi = {
   deleteMovie: (id: string) => {
     return request({
       url: `/api/movies/${id}`,
-      method: 'DELETE',
+      method: "DELETE",
+    });
+  },
+  getShowtimesByMovieId: (movieId: string) => {
+    return request({
+      url: `/api/showtimes/movie/${movieId}`,
+      method: "GET",
     });
   },
 };

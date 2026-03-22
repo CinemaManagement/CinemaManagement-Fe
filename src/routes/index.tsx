@@ -17,6 +17,7 @@ import FoodSelection from "@/pages/booking/FoodSelection";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
+import FoodManagement from "@/pages/foods/FoodManagement";
 
 const Router = () => {
   return (
@@ -36,7 +37,7 @@ const Router = () => {
         <Route path="/movies/add" element={<MovieForm />} />
         <Route path="/movies/edit/:id" element={<MovieForm />} />
         <Route path={URL.Showtimes} element={<div className="p-20 text-center text-2xl">Showtimes coming soon...</div>} />
-        <Route path={URL.Food} element={<div className="p-20 text-center text-2xl">Food & Drinks coming soon...</div>} />
+        <Route path={URL.Food} element={<FoodManagement />} />
       </Route>
 
       {/* Admin routes */}
