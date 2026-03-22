@@ -6,7 +6,6 @@ import {
    Shield,
    ChevronRight,
    Download,
-   QrCode,
    Film,
    Loader2,
 } from "lucide-react";
@@ -71,57 +70,129 @@ const Profile = () => {
       }
    };
 
+   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
+
    const renderBookingItem = (booking: MovieBooking) => {
+      const showtime = booking.showtimeId as any;
+      const movie = showtime?.movieId;
+      const isExpanded = expandedBooking === booking._id;
 
       return (
          <div key={booking._id} className="group relative">
             <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-r to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-            <div className="bg-background/50 border-border hover:border-primary/30 flex flex-col justify-between rounded-2xl border p-6 transition-all md:flex-row md:items-center">
-               <div className="flex items-start gap-6">
-                  <div className="bg-accent/20 text-primary flex h-20 w-16 shrink-0 items-center justify-center rounded-lg">
-                     <Film className="h-8 w-8 opacity-40" />
-                  </div>
-                  <div>
-                     <div className="mb-1 flex items-center gap-3">
-                        <h3 className="text-lg font-bold tracking-tight text-white uppercase">
-                           Movie Booking
-                        </h3>
-                        <span
-                           className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${booking.status === "PAID"
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-primary/20 text-primary"
-                              }`}
-                        >
-                           {booking.status}
-                        </span>
+            <div
+               onClick={() => setExpandedBooking(isExpanded ? null : booking._id)}
+               className={`bg-background/50 border-border hover:border-primary/30 flex flex-col justify-between rounded-2xl border p-6 transition-all cursor-pointer ${isExpanded ? 'border-primary/50 ring-1 ring-primary/20' : ''}`}
+            >
+               <div className="flex flex-col md:flex-row md:items-center justify-between w-full">
+                  <div className="flex items-start gap-6">
+                     <div className="bg-accent/20 text-primary flex h-20 w-16 shrink-0 items-center justify-center rounded-lg overflow-hidden border border-border/50">
+                        {movie?.posterUrl ? (
+                           <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
+                        ) : (
+                           <Film className="h-8 w-8 opacity-40" />
+                        )}
                      </div>
-                     <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                        Seats:{" "}
-                        <span className="text-primary font-bold">
-                           {booking.seats.map((s) => s.seatCode).join(", ")}
-                        </span>
-                     </p>
+                     <div>
+                        <div className="mb-1 flex items-center gap-3">
+                           <h3 className="text-lg font-bold tracking-tight text-white uppercase line-clamp-1">
+                              {movie?.title || "Movie Booking"}
+                           </h3>
+                           <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${booking.status === "PAID"
+                                 ? "bg-green-500/20 text-green-500"
+                                 : "bg-primary/20 text-primary"
+                                 }`}
+                           >
+                              {booking.status}
+                           </span>
+                        </div>
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
 
+                           <span className="w-1 h-1 bg-border rounded-full" />
+                           <span>Seats: <span className="text-primary font-bold">{booking.seats.map((s) => s.seatCode).join(", ")}</span></span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-2 font-mono opacity-50 uppercase tracking-widest">
+                           Booking ID: {booking.bookingCode}
+                        </p>
+                     </div>
+                  </div>
+
+                  <div className="mt-4 flex items-end justify-between md:justify-end gap-6 md:mt-0">
+                     <div className="text-right">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black mb-1 opacity-50">Total Paid</p>
+                        <span className="text-2xl font-black text-white leading-none">${booking.totalAmount.toFixed(2)}</span>
+                     </div>
+                     <div className="flex gap-2">
+                        <button
+                           className="bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2.5 transition-colors"
+                           title="Download PDF"
+                           onClick={(e) => e.stopPropagation()}
+                        >
+                           <Download className="h-5 w-5" />
+                        </button>
+                        <button
+                           className={`bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2.5 transition-all ${isExpanded ? 'rotate-180 bg-primary/10 text-primary border-primary/30' : ''}`}
+                           title="View Details"
+                        >
+                           <ChevronRight className="h-5 w-5" />
+                        </button>
+                     </div>
                   </div>
                </div>
 
-               <div className="mt-4 flex items-end gap-3 md:mt-0 md:flex-col">
-                  <span className="text-xl font-black text-white">${booking.totalAmount.toFixed(2)}</span>
-                  <div className="flex gap-2">
-                     <button
-                        className="bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2 transition-colors"
-                        title="Download PDF"
-                     >
-                        <Download className="h-5 w-5" />
-                     </button>
-                     <button
-                        className="bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2 transition-colors"
-                        title="Show QR Code"
-                     >
-                        <QrCode className="h-5 w-5" />
-                     </button>
+               {/* Expanded Details */}
+               {isExpanded && (
+                  <div className="mt-6 pt-6 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                           <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">Seat Selection Details</h4>
+                           <div className="space-y-3">
+                              {booking.seats.map((seat, idx) => (
+                                 <div key={idx} className="flex items-center justify-between p-3 bg-accent/10 rounded-xl border border-border/30">
+                                    <div className="flex items-center gap-3">
+                                       <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                          {seat.seatCode}
+                                       </span>
+                                       <div>
+                                          <p className="text-xs font-bold text-white uppercase">{seat.type} SEAT</p>
+                                          <p className="text-[10px] text-muted-foreground uppercase">Row {seat.seatCode.charAt(0)}</p>
+                                       </div>
+                                    </div>
+                                    <span className="text-sm font-bold text-white">${seat.price.toFixed(2)}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+
+                        <div>
+                           <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">Order Summary</h4>
+                           <div className="bg-accent/10 rounded-2xl p-5 border border-border/30 space-y-4">
+                              <div className="flex justify-between text-xs">
+                                 <span className="text-muted-foreground">Original Ticket Price</span>
+                                 <span className="text-white font-bold">${booking.seats.reduce((acc, s) => acc + s.price, 0).toFixed(2)}</span>
+                              </div>
+                              {booking.foodBooking && (
+                                 <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Food & Drinks Bundle</span>
+                                    <span className="text-white font-bold">${(booking.foodBooking as any).totalAmount.toFixed(2)}</span>
+                                 </div>
+                              )}
+                              <div className="h-px bg-border/50" />
+                              <div className="flex justify-between">
+                                 <span className="text-xs font-black text-white uppercase tracking-wider">Grand Total</span>
+                                 <span className="text-lg font-black text-primary">${booking.totalAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="pt-2">
+                                 <button className="w-full py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all transform hover:scale-[1.02] active:scale-95">
+                                    Re-order Same Tickets
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
                   </div>
-               </div>
+               )}
             </div>
          </div>
       );
