@@ -26,6 +26,8 @@ const FoodMenu = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [cart, setCart] = useState<PopulatedCart | null>(null);
 
+  const [activeTab, setActiveTab] = useState<"menu" | "cart">("menu");
+
   const fetchCart = async () => {
     try {
       const response = await cartApi.getCart();
@@ -134,134 +136,166 @@ const FoodMenu = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-white/5 p-2 rounded-2xl border border-white/5 shadow-inner-glossy">
-          <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl shadow-lg">
+        <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-inner-glossy">
+          <button
+            type="button"
+            onClick={() => setActiveTab("menu")}
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all ${activeTab === "menu"
+                ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                : "text-white/40 hover:text-white hover:bg-white/5"
+              }`}
+          >
             <ShoppingBag className="w-4 h-4" />
-            <span className="text-sm font-black whitespace-nowrap">Menu</span>
-          </div>
-          <span className="text-[10px] font-black text-white/40 uppercase px-4 tracking-widest hidden md:block">
-            Food & Drinks
-          </span>
+            <span className="text-xs font-black uppercase tracking-widest">Menu</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("cart")}
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all relative ${activeTab === "cart"
+                ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                : "text-white/40 hover:text-white hover:bg-white/5"
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-widest">Your Cart</span>
+              {cart && cart.items.length > 0 && (
+                <span className={`flex items-center justify-center min-w-[1.25rem] h-5 rounded-full text-[10px] font-black px-1 ${activeTab === "cart" ? "bg-white text-primary" : "bg-primary text-white"
+                  }`}>
+                  {cart.items.length}
+                </span>
+              )}
+            </div>
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
         <div className="lg:col-span-2 space-y-16">
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {foods.map((item) => {
-                const isActive = item._id === selectedId;
-                return (
-                  <button
-                    key={item._id}
-                    type="button"
-                    onClick={() => setSelectedId(item._id)}
-                    className={`glass-card rounded-[2.5rem] p-8 flex gap-6 items-center group transition-all shadow-inner-glossy border ${
-                      isActive ? "border-primary/50" : "border-white/5 hover:border-primary/30"
-                    }`}
-                  >
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 shadow-inner-glossy shrink-0 bg-white/5 flex items-center justify-center text-white/70 text-xs font-black uppercase tracking-widest">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span>{item.name.slice(0, 2)}</span>
-                      )}
-                    </div>
-                    <div className="text-left space-y-3 flex-1">
-                      <div className="space-y-1">
-                        <h3 className="text-lg font-black text-white uppercase tracking-tight">{item.name}</h3>
-                        <p className="text-xs text-white/40 font-medium line-clamp-2">{item.description || "No description available."}</p>
+          {activeTab === "menu" ? (
+            <div className="space-y-8 animate-in slide-in-from-left-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {foods.map((item) => {
+                  const isActive = item._id === selectedId;
+                  return (
+                    <button
+                      key={item._id}
+                      type="button"
+                      onClick={() => setSelectedId(item._id)}
+                      className={`glass-card rounded-[2.5rem] p-8 flex gap-6 items-center group transition-all shadow-inner-glossy border ${isActive ? "border-primary/50" : "border-white/5 hover:border-primary/30"
+                        }`}
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 shadow-inner-glossy shrink-0 bg-white/5 flex items-center justify-center text-white/70 text-xs font-black uppercase tracking-widest">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span>{item.name.slice(0, 2)}</span>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-black text-primary">{formatPrice(item.price)}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{item.type}</span>
+                      <div className="text-left space-y-3 flex-1">
+                        <div className="space-y-1">
+                          <h3 className="text-lg font-black text-white uppercase tracking-tight">{item.name}</h3>
+                          <p className="text-xs text-white/40 font-medium line-clamp-2">{item.description || "No description available."}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-base font-black text-primary">{formatPrice(item.price)}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white/40">{item.type}</span>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {foods.length === 0 && (
-              <div className="p-10 glass-card rounded-[2.5rem] border border-dashed border-white/10 text-center text-white/60">
-                No food items available at the moment.
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
 
-          <div className="space-y-8 pt-8 border-t border-white/5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
-                <ShoppingBag className="w-6 h-6 text-primary" />
-                Your Cart
-              </h2>
-              {cart && cart.items.length > 0 && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-black text-white/40 uppercase tracking-widest">Subtotal</span>
-                  <span className="text-2xl font-black text-primary">{formatPrice(cartTotal)}</span>
+              {foods.length === 0 && (
+                <div className="p-10 glass-card rounded-[2.5rem] border border-dashed border-white/10 text-center text-white/60">
+                  No food items available at the moment.
                 </div>
               )}
             </div>
-
-            {(!cart || cart.items.length === 0) && (
-              <div className="p-16 glass-card rounded-[3rem] border border-dashed border-white/10 text-center text-white/40 uppercase font-black tracking-widest">
-                Your cart is empty
-              </div>
-            )}
-
-            {cart && cart.items.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {cart.items.map((item) => (
-                  <div key={item.foodId?._id} className="p-6 glass-card rounded-[2.5rem] border border-white/10 flex flex-col gap-5 group hover:border-primary/40 transition-all shadow-inner-glossy">
-                    <div className="flex items-start gap-5">
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shrink-0 shadow-2xl">
-                        {item.foodId?.imageUrl && (
-                          <img src={item.foodId.imageUrl} alt={item.foodId.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 pt-1">
-                        <h4 className="text-base font-black text-white uppercase tracking-tight line-clamp-2 leading-tight">{item.foodId?.name}</h4>
-                        <p className="text-sm text-primary font-black mt-2 tracking-wide">{formatPrice(item.foodId?.price || 0)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFromCart(item.foodId._id)}
-                        className="p-2.5 text-white/20 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all shrink-0 -mt-1 -mr-1"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-5 border-t border-white/10">
-                      <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">Quantity</span>
-                      <div className="flex items-center gap-4 bg-background/50 rounded-2xl p-1.5 border border-white/5 shadow-inner-glossy">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantity(item.foodId._id, item.quantity - 1)}
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="text-base font-black text-white w-8 text-center">{item.quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantity(item.foodId._id, item.quantity + 1)}
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-all font-black"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
+          ) : (
+            <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                  <ShoppingBag className="w-6 h-6 text-primary" />
+                  Your Cart
+                </h2>
+                {cart && cart.items.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-black text-white/40 uppercase tracking-widest">Subtotal</span>
+                    <span className="text-2xl font-black text-primary">{formatPrice(cartTotal)}</span>
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
+
+              {(!cart || cart.items.length === 0) && (
+                <div className="p-20 glass-card rounded-[3rem] border border-dashed border-white/10 text-center space-y-4">
+                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
+                    <ShoppingBag className="w-8 h-8 text-white/20" />
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tight">Your cart is empty</h3>
+                  <button
+                    onClick={() => setActiveTab("menu")}
+                    className="text-xs font-black text-primary uppercase tracking-[0.2em] hover:opacity-80 transition-opacity"
+                  >
+                    Go back to Menu
+                  </button>
+                </div>
+              )}
+
+              {cart && cart.items.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {cart.items.map((item) => (
+                    <div key={item.foodId?._id} className="p-6 glass-card rounded-[2.5rem] border border-white/10 flex flex-col gap-5 group hover:border-primary/40 transition-all shadow-inner-glossy">
+                      <div className="flex items-start gap-5">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shrink-0 shadow-2xl">
+                          {item.foodId?.imageUrl && (
+                            <img src={item.foodId.imageUrl} alt={item.foodId.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 pt-1">
+                          <h4 className="text-base font-black text-white uppercase tracking-tight line-clamp-2 leading-tight">{item.foodId?.name}</h4>
+                          <p className="text-sm text-primary font-black mt-2 tracking-wide">{formatPrice(item.foodId?.price || 0)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFromCart(item.foodId._id)}
+                          className="p-2.5 text-white/20 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all shrink-0 -mt-1 -mr-1"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-5 border-t border-white/10">
+                        <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">Quantity</span>
+                        <div className="flex items-center gap-4 bg-background/50 rounded-2xl p-1.5 border border-white/5 shadow-inner-glossy">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuantity(item.foodId._id, item.quantity - 1)}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/5 transition-all"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-base font-black text-white w-8 text-center">{item.quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuantity(item.foodId._id, item.quantity + 1)}
+                            className="w-10 h-10 rounded-xl flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-all font-black"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="lg:col-span-1">
