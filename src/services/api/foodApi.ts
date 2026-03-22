@@ -4,7 +4,7 @@ export const getFoods = () => {
   return request({
     url: "/api/foods",
     method: "GET",
-  }).then((res) => res.data);
+  })
 };
 
 export const cancelFoodBooking = (id: string) => {

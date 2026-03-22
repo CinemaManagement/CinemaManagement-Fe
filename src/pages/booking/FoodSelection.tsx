@@ -25,8 +25,9 @@ const FoodSelection = () => {
   useEffect(() => {
     // Fetch food menu from backend
     getFoods()
-      .then((data: any) => {
-        const items = Array.isArray(data) ? data : data?.data ?? [];
+      .then((res: any) => {
+        const data = res.data?.data ?? res.data;
+        const items = Array.isArray(data) ? data : [];
         setFoodMenu(items);
       })
       .catch((err) => {
@@ -35,7 +36,7 @@ const FoodSelection = () => {
       })
       .finally(() => setLoading(false));
 
-    // Fetch movie details from backend
+    
     if (movieId) {
       movieApi.getMovieById(movieId)
         .then((res) => setMovie(res.data))
