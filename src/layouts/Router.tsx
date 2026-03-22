@@ -18,6 +18,7 @@ import Home from "@/pages/home";
 import MovieForm from "@/pages/movies/MovieForm";
 import SeatSelection from "@/pages/booking/SeatSelection";
 import FoodSelection from "@/pages/booking/FoodSelection";
+import FoodMenu from "@/pages/food";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -39,7 +40,7 @@ export const menuRouterItems: ItemRouteType[] = [
   },
   {
     key: URL.Food,
-    components: <div className="p-20 text-center text-2xl text-white">Food & Drinks coming soon...</div>,
+    components: <FoodMenu />,
     layout: "default",
     title: "Food & Drinks",
     isMenu: true,
