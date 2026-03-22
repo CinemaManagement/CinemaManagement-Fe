@@ -87,7 +87,14 @@ const RoomManagement = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Delete logic could go here
+                        if (window.confirm("Are you sure you want to delete this room?")) {
+                          roomApi.deleteRoom(room._id).then(() => {
+                            toast.success("Room deleted successfully");
+                            fetchRooms();
+                          }).catch(() => {
+                            toast.error("Failed to delete room");
+                          });
+                        }
                       }}
                       className="rounded-lg bg-white/5 p-2 transition-colors hover:bg-red-500/20 hover:text-red-500"
                     >
