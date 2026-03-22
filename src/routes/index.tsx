@@ -38,14 +38,9 @@ const Router = () => {
         <Route path={URL.Movies} element={<Movies />} />
         <Route path="/movies/add" element={<MovieForm />} />
         <Route path="/movies/edit/:id" element={<MovieForm />} />
-        <Route
-          path={URL.Showtimes}
-          element={<div className="p-20 text-center text-2xl">Showtimes coming soon...</div>}
-        />
+        <Route path={URL.Showtimes} element={<ShowtimesPage />} />
         <Route path={URL.Food} element={<FoodMenu />} />
         <Route path={URL.FoodManagement} element={<FoodManagement />} />
-        <Route path={URL.Showtimes} element={<ShowtimesPage />} />
-        <Route path={URL.Food} element={<div className="p-20 text-center text-2xl">Food & Drinks coming soon...</div>} />
       </Route>
 
       {/* Admin routes */}
