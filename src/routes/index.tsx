@@ -1,9 +1,9 @@
-import {Route, Routes} from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import URL from "@/constants/url";
 
 import ProtectedRoute from "@/routes/ProtectedRoute";
-import {MainLayout} from "@/layouts/MainLayout";
+import { MainLayout } from "@/layouts/MainLayout";
 
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -19,6 +19,7 @@ import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import FoodManagement from "@/pages/foods/FoodManagement";
+import ShowtimesPage from "@/pages/showtimes";
 
 const Router = () => {
   return (
@@ -43,6 +44,8 @@ const Router = () => {
         />
         <Route path={URL.Food} element={<FoodMenu />} />
         <Route path={URL.FoodManagement} element={<FoodManagement />} />
+        <Route path={URL.Showtimes} element={<ShowtimesPage />} />
+        <Route path={URL.Food} element={<div className="p-20 text-center text-2xl">Food & Drinks coming soon...</div>} />
       </Route>
 
       {/* Admin routes */}
