@@ -1,17 +1,28 @@
-import {useState, useRef} from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {useState, useRef, useEffect} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {ChevronLeft, Info, Armchair, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
-import {MOCK_MOVIES} from "../../constants/mockData";
-
+import { movieApi } from "@/services/api/movieApi";
 const SeatSelection = () => {
   const {showtimeId} = useParams();
   const navigate = useNavigate();
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
   const movieId = showtimeId?.split("-")[0];
-  const movie = MOCK_MOVIES.find((m) => m.id === movieId) || MOCK_MOVIES[0];
+  const [movie, setMovie] = useState<any>({});
 
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        const res = await movieApi.getMovieById(movieId as string);
+        setMovie(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    if (movieId) fetchMovie();
+  }, [movieId]);
   // Zoom & Pan State
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({x: 0, y: 0});
@@ -96,7 +107,7 @@ const SeatSelection = () => {
               Choose Your Throne
             </h1>
             <p className="text-primary mt-1 flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
-              {movie.title} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
+              {movie?.title} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
               PM
             </p>
           </div>
@@ -170,7 +181,7 @@ const SeatSelection = () => {
                               />
                               {!isOccupied && (
                                 <div className="glass-card border-primary/20 pointer-events-none absolute -top-10 left-1/2 z-20 -translate-x-1/2 rounded-lg px-3 py-1.5 text-[9px] font-black tracking-widest whitespace-nowrap uppercase opacity-0 transition-all group-hover/seat:opacity-100">
-                                  {id} • {type} • ${getSeatPrice(type)}
+                                  {id} • {type} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getSeatPrice(type))}
                                 </div>
                               )}
                             </button>
@@ -258,7 +269,7 @@ const SeatSelection = () => {
                     Movie Choice
                   </p>
                   <p className="text-xl leading-tight font-black tracking-tight text-white uppercase">
-                    {movie.title}
+                    {movie?.title}
                   </p>
                 </div>
 
@@ -307,10 +318,10 @@ const SeatSelection = () => {
                   <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">
                     Total Price
                   </span>
-                  <p className="text-4xl leading-none font-black text-white">${totalPrice}</p>
+                  <p className="text-4xl leading-none font-black text-white">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</p>
                 </div>
                 <div className="text-primary bg-primary/10 border-primary/20 shadow-inner-gold flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase">
-                  USD
+                  VND
                 </div>
               </div>
 
@@ -319,7 +330,7 @@ const SeatSelection = () => {
                 onClick={() =>
                   navigate(`/food-selection?movieId=${movieId}&seats=${selectedSeats.join(",")}`)
                 }
-                className="bg-primary flex items-center justify-between text-left text-primary-foreground btn-glossy w-full rounded-xl py-6 px-4 text-xs font-black tracking-[0.1em] uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
+                className="bg-primary flex items-center justify-between text-left text-primary-foreground btn-glossy w-full rounded-xl py-6 px-4 text-xs font-black tracking-widest uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
               >
                 Continue to Snacks <ChevronRight />
               </button>

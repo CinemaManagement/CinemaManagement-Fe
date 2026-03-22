@@ -27,6 +27,13 @@ export const MovieStatus = {
 } as const;
 export type MovieStatus = (typeof MovieStatus)[keyof typeof MovieStatus];
 
+export const ShowingStatus = {
+  NOW_SHOWING: 'NOW_SHOWING',
+  COMING_SOON: 'COMING_SOON',
+  STOPPED: 'STOPPED',
+} as const;
+export type ShowingStatus = (typeof ShowingStatus)[keyof typeof ShowingStatus];
+
 export interface Movie {
   _id: string;
   title: string;
@@ -35,6 +42,12 @@ export interface Movie {
   posterUrl: string;
   trailerUrl: string;
   status: MovieStatus;
+  category: string[];
+  description: string;
+  director: { name: string; avatar: string }[];
+  actors: { name: string; avatar: string }[];
+  rate: number;
+  showingStatus: ShowingStatus;
   revenueSharePercent: number;
 }
 

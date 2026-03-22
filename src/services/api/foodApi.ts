@@ -1,5 +1,12 @@
-import request from "../api";
 import {FoodType} from "@/types/document";
+import request from "../api";
+
+export const cancelFoodBooking = (id: string) => {
+  return request({
+    url: `/api/bookings/food/${id}/cancel`,
+    method: "PATCH",
+  }).then((res) => res.data);
+};
 
 export const foodApi = {
   getFoods: (type?: FoodType) => {
@@ -30,4 +37,5 @@ export const foodApi = {
       params: {hard: hard ? "true" : "false"},
     });
   },
+  cancelFoodBooking,
 };
