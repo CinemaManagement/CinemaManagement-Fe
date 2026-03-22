@@ -1,0 +1,8 @@
+const USER_ROLE = {
+  ADMIN: "ADMIN",
+  MANAGER: "MANAGER",
+  CINEMA: "CINEMA",
+  CUSTOMER: "CUSTOMER",
+};
+
+export { USER_ROLE };

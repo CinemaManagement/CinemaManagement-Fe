@@ -3,7 +3,7 @@ import { Film, User, LogOut, Menu, X, Search, Bell } from 'lucide-react';
 import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logout } from '../../store/slices/authSlice';
-import { UserRole } from '../../types/document';
+import { menuRouterItems } from '../../layouts/Router';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,14 +16,10 @@ export const Navbar = () => {
     navigate('/login');
   };
 
-  const navLinks = [
-    { name: 'Movies', path: '/movies' },
-    { name: 'Showtimes', path: '/showtimes' },
-    { name: 'Food & Drinks', path: '/food' },
-    ...(user?.role === UserRole.ADMIN || user?.role === UserRole.MANAGER 
-      ? [{ name: 'Dashboard', path: '/admin' }] 
-      : []),
-  ];
+  const navLinks = menuRouterItems.filter((item) => {
+    if (!item.roles) return true;
+    return user?.role ? item.roles.includes(user.role as string) : false;
+  });
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -44,11 +40,11 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
-                key={link.name}
-                to={link.path}
+                key={link.key}
+                to={link.key}
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               >
-                {link.name}
+                {link.title}
               </Link>
             ))}
           </div>
@@ -68,7 +64,7 @@ export const Navbar = () => {
                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
                     <User className="w-5 h-5 text-primary" />
                   </div>
-                  <span className="text-sm font-medium text-white pr-2">{user?.fullName}</span>
+                  {/* <span className="text-sm font-medium text-white pr-2">{user?.fullName}</span> */}
                 </Link>
                 <button 
                   onClick={handleLogout}
@@ -106,12 +102,12 @@ export const Navbar = () => {
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <Link
-                key={link.name}
-                to={link.path}
+                key={link.key}
+                to={link.key}
                 onClick={() => setIsOpen(false)}
                 className="text-lg font-medium text-muted-foreground hover:text-primary"
               >
-                {link.name}
+                {link.title}
               </Link>
             ))}
             <hr className="border-border" />
