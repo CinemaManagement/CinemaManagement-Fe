@@ -140,11 +140,10 @@ const FoodMenu = () => {
           <button
             type="button"
             onClick={() => setActiveTab("menu")}
-            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all ${
-              activeTab === "menu"
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all ${activeTab === "menu"
                 ? "bg-primary text-primary-foreground shadow-lg scale-105"
                 : "text-white/40 hover:text-white hover:bg-white/5"
-            }`}
+              }`}
           >
             <ShoppingBag className="w-4 h-4" />
             <span className="text-xs font-black uppercase tracking-widest">Menu</span>
@@ -152,18 +151,16 @@ const FoodMenu = () => {
           <button
             type="button"
             onClick={() => setActiveTab("cart")}
-            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all relative ${
-              activeTab === "cart"
+            className={`flex items-center gap-3 px-6 py-3 rounded-xl transition-all relative ${activeTab === "cart"
                 ? "bg-primary text-primary-foreground shadow-lg scale-105"
                 : "text-white/40 hover:text-white hover:bg-white/5"
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-widest">Your Cart</span>
               {cart && cart.items.length > 0 && (
-                <span className={`flex items-center justify-center min-w-[1.25rem] h-5 rounded-full text-[10px] font-black px-1 ${
-                  activeTab === "cart" ? "bg-white text-primary" : "bg-primary text-white"
-                }`}>
+                <span className={`flex items-center justify-center min-w-[1.25rem] h-5 rounded-full text-[10px] font-black px-1 ${activeTab === "cart" ? "bg-white text-primary" : "bg-primary text-white"
+                  }`}>
                   {cart.items.length}
                 </span>
               )}
@@ -184,9 +181,8 @@ const FoodMenu = () => {
                       key={item._id}
                       type="button"
                       onClick={() => setSelectedId(item._id)}
-                      className={`glass-card rounded-[2.5rem] p-8 flex gap-6 items-center group transition-all shadow-inner-glossy border ${
-                        isActive ? "border-primary/50" : "border-white/5 hover:border-primary/30"
-                      }`}
+                      className={`glass-card rounded-[2.5rem] p-8 flex gap-6 items-center group transition-all shadow-inner-glossy border ${isActive ? "border-primary/50" : "border-white/5 hover:border-primary/30"
+                        }`}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 shadow-inner-glossy shrink-0 bg-white/5 flex items-center justify-center text-white/70 text-xs font-black uppercase tracking-widest">
                         {item.imageUrl ? (
@@ -242,7 +238,7 @@ const FoodMenu = () => {
                     <ShoppingBag className="w-8 h-8 text-white/20" />
                   </div>
                   <h3 className="text-xl font-black text-white uppercase tracking-tight">Your cart is empty</h3>
-                  <button 
+                  <button
                     onClick={() => setActiveTab("menu")}
                     className="text-xs font-black text-primary uppercase tracking-[0.2em] hover:opacity-80 transition-opacity"
                   >
@@ -273,7 +269,7 @@ const FoodMenu = () => {
                           <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
-                      
+
                       <div className="flex items-center justify-between pt-5 border-t border-white/10">
                         <span className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em]">Quantity</span>
                         <div className="flex items-center gap-4 bg-background/50 rounded-2xl p-1.5 border border-white/5 shadow-inner-glossy">
