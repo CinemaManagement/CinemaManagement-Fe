@@ -2,7 +2,8 @@ import {useState, useEffect} from "react";
 import {X, Calendar, Clock, Save, Monitor} from "lucide-react";
 import {showtimeApi} from "@/services/api/showtimeApi";
 import {cinemaRoomApi} from "@/services/api/cinemaRoomApi";
-import type {CinemaRoom} from "@/types/document";
+import {movieApi} from "@/services/api/movieApi";
+import type {CinemaRoom, Showtime} from "@/types/document";
 import toast from "react-hot-toast";
 
 interface AddShowtimeModalProps {
@@ -30,24 +31,50 @@ const AddShowtimeModal = ({
     priceVip: 18,
     priceCouple: 35,
   });
+  const [movieDuration, setMovieDuration] = useState(120);
+  const [existingShowtimes, setExistingShowtimes] = useState<Showtime[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      const fetchRooms = async () => {
+      const initData = async () => {
         try {
-          const response = await cinemaRoomApi.getRooms();
-          const data = response.data?.data || response.data || [];
-          setRooms(data);
-          if (data.length > 0) {
-            setFormData((prev) => ({...prev, roomId: data[0]._id}));
+          const roomsRes = await cinemaRoomApi.getRooms();
+          const roomsData = roomsRes.data?.data || roomsRes.data || [];
+          setRooms(roomsData);
+          if (roomsData.length > 0 && !formData.roomId) {
+            setFormData((prev) => ({...prev, roomId: roomsData[0]._id}));
           }
+
+          const movieRes = await movieApi.getMovieById(movieId);
+          const movieData = movieRes.data?.data || movieRes.data;
+          setMovieDuration(movieData.duration || 120);
         } catch {
-          toast.error("Failed to fetch rooms.");
+          toast.error("Failed to load initial data.");
         }
       };
-      fetchRooms();
+      initData();
     }
-  }, [isOpen]);
+  }, [isOpen, movieId, formData.roomId]);
+
+  useEffect(() => {
+    if (isOpen && formData.roomId && formData.date) {
+      const fetchRoomShowtimes = async () => {
+        try {
+          const res = await showtimeApi.getShowtimesByRoom(formData.roomId);
+          const all = (res.data?.data || res.data || []) as Showtime[];
+          // Filter for ACTIVE and same day
+          const filtered = all.filter((s) => {
+            const sameDay = s.startTime.startsWith(formData.date);
+            return s.status === "ACTIVE" && sameDay;
+          });
+          setExistingShowtimes(filtered);
+        } catch {
+          console.error("Failed to fetch room showtimes");
+        }
+      };
+      fetchRoomShowtimes();
+    }
+  }, [isOpen, formData.roomId, formData.date]);
 
   if (!isOpen) return null;
 
@@ -59,17 +86,66 @@ const AddShowtimeModal = ({
     }));
   };
 
+  const timeToMinutes = (time: string) => {
+    if (!time) return 0;
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const minutesToTime = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  };
+
+  const dayStart = 8 * 60; // 08:00
+  const dayEnd = 24 * 60; // 00:00
+  const totalMinutes = dayEnd - dayStart;
+
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const clickedMinutes = Math.round((percentage * totalMinutes + dayStart) / 5) * 5; // Snap to 5 mins
+
+    setFormData((prev) => ({
+      ...prev,
+      startTime: minutesToTime(clickedMinutes),
+    }));
+  };
+
+  const calculateEndTime = () => {
+    if (!formData.startTime) return "";
+    const startMins = timeToMinutes(formData.startTime);
+    const endMins = startMins + movieDuration;
+    return minutesToTime(endMins);
+  };
+
+  const getPercentage = (timeStr: string) => {
+    const t = timeStr.includes("T") ? timeStr.split("T")[1].substring(0, 5) : timeStr;
+    const mins = timeToMinutes(t);
+    return ((mins - dayStart) / totalMinutes) * 100;
+  };
+
+  const getWidth = (start: string, end: string) => {
+    const s = timeToMinutes(start.includes("T") ? start.split("T")[1].substring(0, 5) : start);
+    const e = timeToMinutes(end.includes("T") ? end.split("T")[1].substring(0, 5) : end);
+    return ((e - s) / totalMinutes) * 100;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
       const startDateTime = new Date(`${formData.date}T${formData.startTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + movieDuration * 60000);
 
       const payload = {
         movieId,
         cinemaRoomId: formData.roomId,
         startTime: startDateTime,
+        endTime: endDateTime,
         pricingRule: {
           NORMAL: formData.priceNormal,
           VIP: formData.priceVip,
@@ -188,7 +264,83 @@ const AddShowtimeModal = ({
                   />
                 </div>
               </div>
+
+              {/* End Time (Display) */}
+              <div className="space-y-2">
+                <label className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">
+                  End Time (Auto)
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 opacity-50">
+                    <Clock className="h-4 w-4 text-white" />
+                  </div>
+                  <input
+                    type="text"
+                    value={calculateEndTime()}
+                    className="shadow-inner-glossy w-full cursor-not-allowed rounded-2xl border border-white/5 bg-white/[0.02] py-3 pr-4 pl-11 text-sm text-white/40 transition-all outline-none"
+                    readOnly
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Interactive Timeline */}
+            {formData.date && formData.roomId && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-black tracking-widest text-white/40 uppercase">
+                    Timeline Chart (Click to select time)
+                  </label>
+                </div>
+                
+                <div 
+                  className="relative h-12 w-full cursor-crosshair overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-inner"
+                  onClick={handleTimelineClick}
+                >
+                  {/* Grid hour markers */}
+                  {[8, 10, 12, 14, 16, 18, 20, 22].map((hour) => (
+                    <div 
+                      key={hour} 
+                      className="absolute top-0 bottom-0 border-l border-white/5"
+                      style={{ left: `${((hour * 60 - dayStart) / totalMinutes) * 100}%` }}
+                    >
+                      <span className="absolute -bottom-0.5 left-1 text-[8px] font-black text-white/20">{hour}h</span>
+                    </div>
+                  ))}
+
+                  {/* Already Scheduled sessions */}
+                  {existingShowtimes.map((s) => (
+                    <div
+                      key={s._id}
+                      className="absolute inset-y-2 rounded bg-white/10 border border-white/20 flex items-center justify-center"
+                      style={{
+                        left: `${getPercentage(s.startTime)}%`,
+                        width: `${getWidth(s.startTime, s.endTime)}%`
+                      }}
+                    >
+                      <span className="text-[8px] font-bold text-white/20 uppercase truncate px-1">Occupied</span>
+                    </div>
+                  ))}
+
+                  {/* Current selection preview */}
+                  {formData.startTime && (
+                    <div
+                      className="absolute inset-y-1 rounded-md border-2 border-primary bg-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all flex items-center justify-center"
+                      style={{
+                        left: `${getPercentage(formData.startTime)}%`,
+                        width: `${getWidth(formData.startTime, calculateEndTime())}%`
+                      }}
+                    >
+                      <span className="text-[9px] font-black text-primary uppercase">New Session</span>
+                    </div>
+                  )}
+                </div>
+                
+                <p className="ml-1 text-[9px] text-white/30 italic">
+                  * Duration: {movieDuration} minutes. Select Start Time by clicking on the chart.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-4">
               <p className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">

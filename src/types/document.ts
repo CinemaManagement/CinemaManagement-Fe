@@ -48,6 +48,7 @@ export interface Movie {
   actors: {name: string; avatar: string}[];
   rate: number;
   showingStatus: ShowingStatus;
+  releaseDate: string;
   revenueSharePercent: number;
 }
 

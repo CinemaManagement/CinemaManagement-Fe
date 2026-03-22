@@ -20,4 +20,10 @@ export const showtimeApi = {
       method: "GET",
     });
   },
+  getShowtimesByRoom: (roomId: string) => {
+    return request({
+      url: `/api/showtimes/room/${roomId}`,
+      method: "GET",
+    });
+  },
 };
