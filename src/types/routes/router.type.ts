@@ -6,4 +6,6 @@ export type ItemRouteType = {
   layout: string;
   roles?: string[];
   children?: ItemRouteType[];
+  title?: string;
+  isMenu?: boolean;
 };
