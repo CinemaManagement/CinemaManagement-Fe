@@ -178,6 +178,7 @@ export interface MovieBooking {
   totalAmount: number;
   status: BookingStatus;
   foodBookingId?: string;
+  foodBooking?: FoodBooking | null;
   payment: {
     method: PaymentMethod;
     paidAt?: Date;
