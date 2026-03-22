@@ -14,6 +14,7 @@ import Movies from "@/pages/movies";
 import MovieForm from "@/pages/movies/MovieForm";
 import SeatSelection from "@/pages/booking/SeatSelection";
 import FoodSelection from "@/pages/booking/FoodSelection";
+import FoodMenu from "@/pages/food";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -36,7 +37,7 @@ const Router = () => {
         <Route path="/movies/add" element={<MovieForm />} />
         <Route path="/movies/edit/:id" element={<MovieForm />} />
         <Route path={URL.Showtimes} element={<div className="p-20 text-center text-2xl">Showtimes coming soon...</div>} />
-        <Route path={URL.Food} element={<div className="p-20 text-center text-2xl">Food & Drinks coming soon...</div>} />
+        <Route path={URL.Food} element={<FoodMenu />} />
       </Route>
 
       {/* Admin routes */}

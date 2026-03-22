@@ -60,9 +60,23 @@ export interface Food {
   name: string;
   type: FoodType;
   price: number;
+  imageUrl?: string;
   description: string;
   status: FoodStatus;
   items?: FoodItem[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CartItem {
+  foodId: string;
+  quantity: number;
+}
+
+export interface Cart {
+  _id: string;
+  userId: string;
+  items: CartItem[];
   createdAt: Date;
   updatedAt: Date;
 }
