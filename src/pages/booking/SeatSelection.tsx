@@ -3,35 +3,26 @@ import {useState, useRef, useEffect} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {ChevronLeft, Info, Armchair, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
-import { movieApi } from "../../services/api/movieApi";
-
+import { movieApi } from "@/services/api/movieApi";
 const SeatSelection = () => {
   const {showtimeId} = useParams();
   const navigate = useNavigate();
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  const [movie, setMovie] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const movieId = showtimeId?.split("-")[0];
+  const [movie, setMovie] = useState<any>({});
 
   useEffect(() => {
     const fetchMovie = async () => {
-      if (!movieId) {
-        setIsLoading(false);
-        return;
-      }
       try {
-        const response = await movieApi.getMovieById(movieId);
-        setMovie(response.data);
+        const res = await movieApi.getMovieById(movieId as string);
+        setMovie(res.data);
       } catch (error) {
-        console.error("Failed to fetch movie", error);
-      } finally {
-        setIsLoading(false);
+        console.log(error);
       }
     };
-    fetchMovie();
+    if (movieId) fetchMovie();
   }, [movieId]);
-
   // Zoom & Pan State
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({x: 0, y: 0});
@@ -101,14 +92,6 @@ const SeatSelection = () => {
     return sum + getSeatPrice(getSeatType(row));
   }, 0);
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="border-primary h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
-      </div>
-    );
-  }
-
   return (
     <div className="animate-in fade-in mx-auto min-h-screen max-w-7xl px-4 pt-12 pb-32 duration-700 sm:px-6 lg:px-8">
       <div className="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-center">
@@ -124,7 +107,7 @@ const SeatSelection = () => {
               Choose Your Throne
             </h1>
             <p className="text-primary mt-1 flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
-              {movie?.title || "Unknown Movie"} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
+              {movie?.title} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
               PM
             </p>
           </div>
@@ -198,7 +181,7 @@ const SeatSelection = () => {
                               />
                               {!isOccupied && (
                                 <div className="glass-card border-primary/20 pointer-events-none absolute -top-10 left-1/2 z-20 -translate-x-1/2 rounded-lg px-3 py-1.5 text-[9px] font-black tracking-widest whitespace-nowrap uppercase opacity-0 transition-all group-hover/seat:opacity-100">
-                                  {id} • {type} • ${getSeatPrice(type)}
+                                  {id} • {type} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getSeatPrice(type))}
                                 </div>
                               )}
                             </button>
@@ -286,7 +269,7 @@ const SeatSelection = () => {
                     Movie Choice
                   </p>
                   <p className="text-xl leading-tight font-black tracking-tight text-white uppercase">
-                    {movie?.title || "Unknown Movie"}
+                    {movie?.title}
                   </p>
                 </div>
 
@@ -335,10 +318,10 @@ const SeatSelection = () => {
                   <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">
                     Total Price
                   </span>
-                  <p className="text-4xl leading-none font-black text-white">${totalPrice}</p>
+                  <p className="text-4xl leading-none font-black text-white">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</p>
                 </div>
                 <div className="text-primary bg-primary/10 border-primary/20 shadow-inner-gold flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase">
-                  USD
+                  VND
                 </div>
               </div>
 
