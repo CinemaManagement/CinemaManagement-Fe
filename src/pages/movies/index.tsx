@@ -22,7 +22,10 @@ const Movies = () => {
   const fetchMovies = async () => {
     try {
       setIsLoading(true);
-      const response = await movieApi.getMovies();
+      const response =
+        user?.role === UserRole.CUSTOMER
+          ? await movieApi.getMovies()
+          : await movieApi.getMoviesByManager();
       setMovies(response.data?.data || response.data || []);
     } catch {
       toast.error("Failed to fetch movies.");
@@ -72,60 +75,64 @@ const Movies = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-32 font-sans">
-      <section className="relative overflow-hidden bg-black px-4 py-16 md:px-8">
-        <div className="pointer-events-none absolute top-0 left-1/2 h-[1000px] w-full -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
+      {user?.role === UserRole.CUSTOMER && (
+        <section className="relative overflow-hidden bg-black px-4 py-16 md:px-8">
+          <div className="pointer-events-none absolute top-0 left-1/2 h-[1000px] w-full -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
 
-        <div className="relative z-20 mx-auto max-w-[1800px]">
-          <div className="relative text-center">
-            <h2 className="text-5xl leading-none font-black tracking-[-0.08em] text-[#d4af37] uppercase drop-shadow-[0_0_60px_rgba(212,175,55,0.5)]">
-              Phim đang chiếu
-            </h2>
-            <div className="mx-auto mt-8 h-2 w-56 rounded-full bg-linear-to-r from-transparent via-[#d4af37] to-transparent opacity-50" />
+          <div className="relative z-20 mx-auto max-w-[1800px]">
+            <div className="relative text-center">
+              <h2 className="text-5xl leading-none font-black tracking-[-0.08em] text-[#d4af37] uppercase drop-shadow-[0_0_60px_rgba(212,175,55,0.5)]">
+                Phim đang chiếu
+              </h2>
+              <div className="mx-auto mt-8 h-2 w-56 rounded-full bg-linear-to-r from-transparent via-[#d4af37] to-transparent opacity-50" />
 
-            {canAddMovie && (
-              <button
-                onClick={handleAddMovie}
-                className="absolute top-1/2 right-10 -translate-y-1/2 rounded-full bg-[#d4af37] p-6 text-black shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all hover:scale-110 hover:bg-white active:scale-95"
-              >
-                <Plus className="h-10 w-10 stroke-[3px]" />
-              </button>
-            )}
+              {canAddMovie && (
+                <button
+                  onClick={handleAddMovie}
+                  className="absolute top-1/2 right-10 -translate-y-1/2 rounded-full bg-[#d4af37] p-6 text-black shadow-[0_0_40px_rgba(212,175,55,0.4)] transition-all hover:scale-110 hover:bg-white active:scale-95"
+                >
+                  <Plus className="h-10 w-10 stroke-[3px]" />
+                </button>
+              )}
+            </div>
+
+            <InfinitePremiumCarousel
+              items={nowShowingMovies}
+              sectionType="NOW"
+              canEdit={canEditMovie}
+              canDelete={canDeleteMovie}
+              onEdit={handleEditMovie}
+              onDelete={handleDelete}
+              navigate={navigate}
+              URL={URL}
+            />
           </div>
+        </section>
+      )}
 
-          <InfinitePremiumCarousel
-            items={nowShowingMovies}
-            sectionType="NOW"
-            canEdit={canEditMovie}
-            canDelete={canDeleteMovie}
-            onEdit={handleEditMovie}
-            onDelete={handleDelete}
-            navigate={navigate}
-            URL={URL}
-          />
-        </div>
-      </section>
+      {user?.role === UserRole.CUSTOMER && (
+        <section className="relative overflow-hidden px-4 py-32 md:px-8">
+          <div className="relative z-20 mx-auto max-w-[1800px]">
+            <div className="text-center">
+              <h2 className="text-5xl leading-none font-black tracking-[-0.08em] text-[#d4af37] uppercase drop-shadow-[0_0_60px_rgba(212,175,55,0.5)]">
+                Phim sắp chiếu
+              </h2>
+              <div className="mx-auto mt-8 h-2 w-56 rounded-full bg-linear-to-r from-transparent via-[#d4af37] to-transparent opacity-50" />
+            </div>
 
-      <section className="relative overflow-hidden px-4 py-32 md:px-8">
-        <div className="relative z-20 mx-auto max-w-[1800px]">
-          <div className="text-center">
-            <h2 className="text-5xl leading-none font-black tracking-[-0.08em] text-[#d4af37] uppercase drop-shadow-[0_0_60px_rgba(212,175,55,0.5)]">
-              Phim sắp chiếu
-            </h2>
-            <div className="mx-auto mt-8 h-2 w-56 rounded-full bg-linear-to-r from-transparent via-[#d4af37] to-transparent opacity-50" />
+            <InfinitePremiumCarousel
+              items={comingSoonMovies}
+              sectionType="SOON"
+              canEdit={canEditMovie}
+              canDelete={canDeleteMovie}
+              onEdit={handleEditMovie}
+              onDelete={handleDelete}
+              navigate={navigate}
+              URL={URL}
+            />
           </div>
-
-          <InfinitePremiumCarousel
-            items={comingSoonMovies}
-            sectionType="SOON"
-            canEdit={canEditMovie}
-            canDelete={canDeleteMovie}
-            onEdit={handleEditMovie}
-            onDelete={handleDelete}
-            navigate={navigate}
-            URL={URL}
-          />
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="mx-auto mt-24 max-w-7xl px-4 md:px-8">
         <div className="shadow-3xl rounded-[3rem] border border-white/5 bg-[#111] p-10 md:p-16">

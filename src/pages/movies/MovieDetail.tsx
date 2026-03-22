@@ -32,7 +32,7 @@ interface Showtime {
   };
 }
 
-interface ExtendedMovie extends Partial<Movie> {
+interface ExtendedMovie extends Omit<Partial<Movie>, "director" | "actors"> {
   id?: string;
   category?: string[];
   director?: PersonItem[] | string;
@@ -239,9 +239,7 @@ const MovieDetail = () => {
                   Principal Cast
                 </p>
                 {(() => {
-                  const raw =
-                    (movie as ExtendedMovie & {actors?: (PersonItem | string)[]}).actors ||
-                    movie.cast;
+                  const raw = movie.actors || movie.cast;
                   if (!raw || (Array.isArray(raw) && raw.length === 0))
                     return <p className="text-sm text-white/40">N/A</p>;
                   const list: PersonItem[] = (raw as (PersonItem | string)[]).map((c) =>
