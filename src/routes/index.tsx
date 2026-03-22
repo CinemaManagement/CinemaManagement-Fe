@@ -42,7 +42,7 @@ const Router = () => {
           element={<div className="p-20 text-center text-2xl">Showtimes coming soon...</div>}
         />
         <Route path={URL.Food} element={<FoodMenu />} />
-        <Route path={URL.Food} element={<FoodManagement />} />
+        <Route path={URL.FoodManagement} element={<FoodManagement />} />
       </Route>
 
       {/* Admin routes */}

@@ -12,11 +12,12 @@ const URL = {
   MovieDetail: "/movies/:id",
   Showtimes: "/showtimes",
   Food: "/food",
+  FoodManagement: "/admin/foods",
   FoodSelection: "/food-selection",
   Booking: "/booking/:showtimeId",
   PaymentSuccess: "/payment-success",
   Profile: "/profile",
-  
+
   Admin: "/admin",
   AdminMovies: "/admin/movies",
   AdminShowtimes: "/admin/showtimes",
