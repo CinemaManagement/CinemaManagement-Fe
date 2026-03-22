@@ -1,23 +1,30 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Star, Clock, Calendar, Ticket, ChevronRight, MapPin, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { movieApi } from '@/services/api/movieApi';
 import toast from 'react-hot-toast';
 import type { Movie } from '@/types/document';
+import { ShowingStatus } from '@/types/document';
+import URL from '@/constants/url';
 
 interface ExtendedMovie extends Partial<Movie> {
   id?: string;
-  genre?: string[];
-  director?: string;
-  cast?: string[];
-  releaseDate?: string;
-  rating?: string | number;
+  category?: string[];
+  director?: { name: string; avatar: string }[];
+  actors?: { name: string; avatar: string }[];
+  showingStatus?: ShowingStatus;
+  rate?: number;
   description?: string;
+  duration?: number;
+  ageRestriction?: number;
+  posterUrl?: string;
+  trailerUrl?: string;
 }
 
 const MovieDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedDate, setSelectedDate] = useState(0);
   const [movie, setMovie] = useState<ExtendedMovie | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,13 +39,21 @@ const MovieDetail = () => {
         setMovie(data);
       } catch {
         toast.error('Failed to fetch movie details.');
-        navigate('/movies');
+        navigate(URL.Movies);
       } finally {
         setIsLoading(false);
       }
     };
     fetchMovie();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (movie && location.hash === '#trailer') {
+      setTimeout(() => {
+        document.getElementById('trailer')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [movie, location.hash]);
 
   const dates = [
     { day: 'FRI', date: '24', month: 'OCT' },
@@ -72,10 +87,12 @@ const MovieDetail = () => {
     );
   }
 
+  const directorNames = movie.director?.map(d => d.name).join(', ') || 'N/A';
+  const actorNames = movie.actors?.map(a => a.name).join(', ') || 'N/A';
+
   return (
     <div className="pb-32 overflow-hidden">
-      {/* Movie Hero Header */}
-      <section className="relative h-[80vh] w-full pt-10">
+      <section className="relative h-[90vh] w-full">
         <div className="absolute inset-0">
           <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent" />
@@ -89,7 +106,7 @@ const MovieDetail = () => {
           
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="flex flex-wrap gap-2">
-              {movie.genre?.map((g: string) => (
+              {movie.category?.map((g: string) => (
                 <span key={g} className="px-4 py-1.5 bg-primary/20 backdrop-blur-md text-primary text-[10px] font-black rounded-lg uppercase tracking-widest border border-primary/30 shadow-inner-gold">
                   {g}
                 </span>
@@ -102,10 +119,10 @@ const MovieDetail = () => {
 
             <div className="flex flex-wrap items-center gap-8 text-sm text-white/80 font-black uppercase tracking-[0.2em]">
               <span className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/10 shadow-inner-glossy">
-                <Star className="w-4 h-4 text-primary fill-primary" /> {movie.rating} IMDB
+                <Star className="w-4 h-4 text-primary fill-primary" /> {movie.rate || 0} IMDB
               </span>
-              <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> {movie.duration}</span>
-              <span className="flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" /> {movie.releaseDate}</span>
+              <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> {movie.duration} MIN</span>
+              <span className="flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" /> {movie.showingStatus || 'Upcoming'}</span>
               <span className="px-3 py-1 bg-secondary text-white rounded-md text-xs">{movie.ageRestriction}+</span>
             </div>
           </div>
@@ -113,13 +130,12 @@ const MovieDetail = () => {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 grid grid-cols-1 lg:grid-cols-5 gap-16">
-        {/* Left Column: Movie Info */}
         <div className="lg:col-span-3 space-y-16">
           <div className="space-y-6">
             <h2 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
               <div className="w-2 h-8 bg-primary rounded-full shadow-inner-gold" /> Synopsis
             </h2>
-            <p className="text-xl text-white/60 leading-relaxed font-medium">
+            <p className="text-lg text-white/60 leading-relaxed font-medium">
               {movie.description}
             </p>
           </div>
@@ -127,42 +143,41 @@ const MovieDetail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="glass-card p-8 rounded-[2.5rem] shadow-inner-glossy">
               <p className="text-[10px] text-primary uppercase font-black tracking-[0.4em] mb-3">Director</p>
-              <p className="text-2xl text-white font-black">{movie.director || 'N/A'}</p>
+              <p className="text-2xl text-white font-black">{directorNames}</p>
             </div>
             <div className="glass-card p-8 rounded-[2.5rem] shadow-inner-glossy">
               <p className="text-[10px] text-primary uppercase font-black tracking-[0.4em] mb-3">Principal Cast</p>
-              <p className="text-xl text-white font-black truncate">{movie.cast?.join(', ') || 'N/A'}</p>
+              <p className="text-xl text-white font-black truncate">{actorNames}</p>
             </div>
           </div>
 
-          {/* Trailer Section */}
-          <div className="space-y-6">
-             <h2 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
-              <div className="w-2 h-8 bg-primary rounded-full shadow-inner-gold" /> Official Trailer
-            </h2>
-            <div className="aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative group">
-              <iframe 
-                width="100%" 
-                height="100%" 
-                src={movie.trailerUrl} 
-                title="YouTube video player" 
-                frameBorder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                allowFullScreen
-                className="group-hover:grayscale-0 transition-opacity"
-              ></iframe>
+          {movie.trailerUrl && (
+            <div id="trailer" className="space-y-6">
+               <h2 className="text-3xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
+                <div className="w-2 h-8 bg-primary rounded-full shadow-inner-gold" /> Official Trailer
+              </h2>
+              <div className="aspect-video rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative group">
+                <iframe 
+                  width="100%" 
+                  height="100%" 
+                  src={movie.trailerUrl} 
+                  title="YouTube video player" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                  className="group-hover:grayscale-0 transition-opacity"
+                ></iframe>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Right Column: Showtime Selection */}
         <div className="lg:col-span-2">
           <div className="glass-card rounded-[3rem] p-10 shadow-2xl sticky top-24 shadow-inner-glossy">
             <h2 className="text-2xl font-black text-white uppercase tracking-tighter mb-8 flex items-center gap-4">
                <Ticket className="w-7 h-7 text-primary" /> Plan Your Visit
             </h2>
 
-            {/* Date Selection */}
             <div className="space-y-6 mb-12">
               <div className="flex justify-between items-center">
                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Select Date</p>
@@ -187,7 +202,6 @@ const MovieDetail = () => {
               </div>
             </div>
 
-            {/* Theater Location (Mock) */}
             <div className="mb-10">
                <div className="flex items-center justify-between mb-6">
                   <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">CineLux Cinema</p>
@@ -232,4 +246,3 @@ const MovieDetail = () => {
 };
 
 export default MovieDetail;
-

@@ -29,6 +29,7 @@ export default function ProtectedRoute({
   if (!token || isTokenExpired(token)) {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     return <Navigate to={URL.Login} replace />;
   }
 
