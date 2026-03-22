@@ -64,9 +64,10 @@ export const FoodStatus = {
 export type FoodStatus = (typeof FoodStatus)[keyof typeof FoodStatus];
 
 export interface FoodItem {
-  foodId: string;
+  foodId?: string;
   name: string;
   quantity: number;
+  imageUrl?: string;
 }
 
 export interface Food {

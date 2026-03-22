@@ -95,11 +95,10 @@ const FoodManagement = () => {
                 <button
                   key={t}
                   onClick={() => setFilterType(t)}
-                  className={`rounded-xl px-4 py-2 text-xs font-black uppercase transition-all ${
-                    filterType === t
+                  className={`rounded-xl px-4 py-2 text-xs font-black uppercase transition-all ${filterType === t
                       ? "bg-primary text-primary-foreground shadow-lg"
                       : "text-white/40 hover:text-white"
-                  }`}
+                    }`}
                 >
                   {t}
                 </button>
@@ -235,6 +234,27 @@ const FoodFormModal = ({ food, singleItems, onClose, onSuccess }: FoodFormModalP
     items: food?.items || [],
   });
 
+  useEffect(() => {
+    if (!food || food.type !== FoodType.COMBO || singleItems.length === 0) return;
+
+    setFormData((prev) => {
+      const nextItems = prev.items.map((item) => {
+        if (item.foodId) return item;
+        const matched = singleItems.find((f) => f.name === item.name);
+        if (!matched) return item;
+        return {
+          ...item,
+          foodId: matched._id,
+          name: matched.name,
+          imageUrl: item.imageUrl || matched.imageUrl,
+        };
+      });
+
+      const changed = nextItems.some((it, idx) => it.foodId !== prev.items[idx]?.foodId);
+      return changed ? { ...prev, items: nextItems } : prev;
+    });
+  }, [food, singleItems]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -279,7 +299,11 @@ const FoodFormModal = ({ food, singleItems, onClose, onSuccess }: FoodFormModalP
 
     setFormData((prev) => ({
       ...prev,
-      items: prev.items.map((it, i) => (i === idx ? { ...it, foodId, name: selectedFood.name } : it)),
+      items: prev.items.map((it, i) =>
+        i === idx
+          ? { ...it, foodId, name: selectedFood.name, imageUrl: selectedFood.imageUrl }
+          : it
+      ),
     }));
   };
 
@@ -376,6 +400,9 @@ const FoodFormModal = ({ food, singleItems, onClose, onSuccess }: FoodFormModalP
               <div className="space-y-4">
                 {formData.items.map((item, idx) => {
                   const selectedFood = singleItems.find((f) => f._id === item.foodId);
+                  const selectedIds = formData.items
+                    .map((it) => it.foodId)
+                    .filter((id): id is string => Boolean(id) && id !== item.foodId);
                   return (
                     <div key={idx} className="flex items-center gap-4">
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-white/5 shadow-inner-glossy flex items-center justify-center">
@@ -394,7 +421,7 @@ const FoodFormModal = ({ food, singleItems, onClose, onSuccess }: FoodFormModalP
 
                       <select
                         className={`${inputCls} flex-1 min-w-0`}
-                        value={item.foodId}
+                        value={item.foodId || ""}
                         onChange={(e) => updateItem(idx, e.target.value)}
                         required
                       >
@@ -402,7 +429,12 @@ const FoodFormModal = ({ food, singleItems, onClose, onSuccess }: FoodFormModalP
                           Select an item
                         </option>
                         {singleItems.map((f) => (
-                          <option key={f._id} value={f._id} className="bg-[#0A0A0A]">
+                          <option
+                            key={f._id}
+                            value={f._id}
+                            className="bg-[#0A0A0A]"
+                            disabled={selectedIds.includes(f._id)}
+                          >
                             {f.name} - {f.price.toLocaleString()}đ
                           </option>
                         ))}
