@@ -1,16 +1,36 @@
-import {useState, useRef} from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {useState, useRef, useEffect} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {ChevronLeft, Info, Armchair, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
-import {MOCK_MOVIES} from "../../constants/mockData";
+import { movieApi } from "../../services/api/movieApi";
 
 const SeatSelection = () => {
   const {showtimeId} = useParams();
   const navigate = useNavigate();
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [movie, setMovie] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const movieId = showtimeId?.split("-")[0];
-  const movie = MOCK_MOVIES.find((m) => m.id === movieId) || MOCK_MOVIES[0];
+
+  useEffect(() => {
+    const fetchMovie = async () => {
+      if (!movieId) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const response = await movieApi.getMovieById(movieId);
+        setMovie(response.data);
+      } catch (error) {
+        console.error("Failed to fetch movie", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchMovie();
+  }, [movieId]);
 
   // Zoom & Pan State
   const [scale, setScale] = useState(1);
@@ -81,6 +101,14 @@ const SeatSelection = () => {
     return sum + getSeatPrice(getSeatType(row));
   }, 0);
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="border-primary h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-in fade-in mx-auto min-h-screen max-w-7xl px-4 pt-12 pb-32 duration-700 sm:px-6 lg:px-8">
       <div className="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-center">
@@ -96,7 +124,7 @@ const SeatSelection = () => {
               Choose Your Throne
             </h1>
             <p className="text-primary mt-1 flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
-              {movie.title} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
+              {movie?.title || "Unknown Movie"} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
               PM
             </p>
           </div>
@@ -258,7 +286,7 @@ const SeatSelection = () => {
                     Movie Choice
                   </p>
                   <p className="text-xl leading-tight font-black tracking-tight text-white uppercase">
-                    {movie.title}
+                    {movie?.title || "Unknown Movie"}
                   </p>
                 </div>
 
@@ -319,7 +347,7 @@ const SeatSelection = () => {
                 onClick={() =>
                   navigate(`/food-selection?movieId=${movieId}&seats=${selectedSeats.join(",")}`)
                 }
-                className="bg-primary flex items-center justify-between text-left text-primary-foreground btn-glossy w-full rounded-xl py-6 px-4 text-xs font-black tracking-[0.1em] uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
+                className="bg-primary flex items-center justify-between text-left text-primary-foreground btn-glossy w-full rounded-xl py-6 px-4 text-xs font-black tracking-widest uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
               >
                 Continue to Snacks <ChevronRight />
               </button>

@@ -10,8 +10,19 @@ interface AuthState {
   error: string | null;
 }
 
+let initialUser = null;
+try {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    initialUser = JSON.parse(userStr);
+  }
+} catch (e) {
+  console.error("Failed to parse user from localStorage", e);
+  localStorage.removeItem('user');
+}
+
 const initialState: AuthState = {
-  user: null,
+  user: initialUser,
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   isLoading: false,
@@ -32,6 +43,7 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       localStorage.setItem('token', action.payload.token);
+      localStorage.setItem('user', JSON.stringify(action.payload.user));
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false;
@@ -42,6 +54,7 @@ const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
     },
     updateUser: (state, action: PayloadAction<User>) => {
       state.user = action.payload;

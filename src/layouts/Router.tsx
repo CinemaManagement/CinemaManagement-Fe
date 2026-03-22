@@ -3,7 +3,6 @@ import {Route, Routes} from "react-router-dom";
 
 import URL from "@/constants/url";
 import type {ItemRouteType} from "@/types/routes/router.type";
-import {USER_ROLE} from "@/constants/role";
 
 import DefaultLayout from "./DefaultLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
@@ -22,6 +21,7 @@ import FoodMenu from "@/pages/food";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
+import { UserRole } from "@/types/document";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -49,7 +49,7 @@ export const menuRouterItems: ItemRouteType[] = [
     key: URL.Admin,
     components: <AdminDashboard />,
     layout: "default",
-    roles: [USER_ROLE.ADMIN, USER_ROLE.MANAGER],
+    roles: [UserRole.ADMIN, UserRole.MANAGER],
     title: "Dashboard",
     isMenu: true,
   },
