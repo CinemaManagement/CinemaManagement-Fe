@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { authApi } from '../../services/api/authApi';
+import URL from '@/constants/url';
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
@@ -15,17 +17,21 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock registration
-    setTimeout(() => {
-      toast.success('Account created successfully! Please log in.');
-      navigate('/login');
+    try {
+      const res = await authApi.register({ fullName, email, password });
+      const resData = res.data?.data || res.data;
+      toast.success(resData?.message || 'Account created successfully!');
+      navigate(URL.Login);
+    } catch (error) {
+      const err = error as { response?: { data?: { message?: string; error?: string } } };
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Registration failed.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-background">
-      {/* Background blobs */}
       <div className="absolute top-0 -right-1/4 w-1/2 h-1/2 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-0 -left-1/4 w-1/2 h-1/2 bg-secondary/10 rounded-full blur-[120px] animate-pulse delay-700" />
       

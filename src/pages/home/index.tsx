@@ -9,7 +9,7 @@ const Home = () => {
     <div className="flex flex-col gap-16 pb-20 overflow-hidden">
       {/* Hero Section */}
       <section className="relative h-[90vh] w-full group">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 overflow-hidden">
           <img 
             src={featuredMovie.posterUrl} 
             alt="Hero Banner" 

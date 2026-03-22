@@ -14,12 +14,11 @@ export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
 
 export interface User {
   _id: string;
-  fullName: string;
   email: string;
-  password?: string;
   role: UserRole;
   status: UserStatus;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export const MovieStatus = {

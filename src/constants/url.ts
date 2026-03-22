@@ -2,6 +2,7 @@ const URL = {
   Home: "/",
   Login: "/login",
   Register: "/register",
+  ForgotPassword: "/forgot-password",
   Movies: "/movies",
   MovieDetail: "/movies/:id",
   Showtimes: "/showtimes",

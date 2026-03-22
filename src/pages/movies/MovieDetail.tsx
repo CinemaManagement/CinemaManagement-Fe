@@ -1,14 +1,44 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Clock, Calendar, Ticket, ChevronRight, MapPin, Info } from 'lucide-react';
-import { useState } from 'react';
-import { MOCK_MOVIES } from '../../constants/mockData';
+import { useState, useEffect } from 'react';
+import { movieApi } from '@/services/api/movieApi';
+import toast from 'react-hot-toast';
+import type { Movie } from '@/types/document';
+
+interface ExtendedMovie extends Partial<Movie> {
+  id?: string;
+  genre?: string[];
+  director?: string;
+  cast?: string[];
+  releaseDate?: string;
+  rating?: string | number;
+  description?: string;
+}
 
 const MovieDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(0);
+  const [movie, setMovie] = useState<ExtendedMovie | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const movie = MOCK_MOVIES.find(m => m.id === id) || MOCK_MOVIES[0];
+  useEffect(() => {
+    const fetchMovie = async () => {
+      try {
+        setIsLoading(true);
+        if (!id) return;
+        const response = await movieApi.getMovieById(id);
+        const data = response.data?.data || response.data;
+        setMovie(data);
+      } catch {
+        toast.error('Failed to fetch movie details.');
+        navigate('/movies');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchMovie();
+  }, [id, navigate]);
 
   const dates = [
     { day: 'FRI', date: '24', month: 'OCT' },
@@ -25,6 +55,22 @@ const MovieDetail = () => {
     { time: '07:30 PM', price: '$22', type: 'IMAX GOLD' },
     { time: '10:15 PM', price: '$15', type: '3D ULTRA' },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-20 bg-background">
+        <div className="h-10 w-10 animate-spin border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-20 bg-background text-white">
+        Movie not found.
+      </div>
+    );
+  }
 
   return (
     <div className="pb-32 overflow-hidden">
@@ -43,7 +89,7 @@ const MovieDetail = () => {
           
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="flex flex-wrap gap-2">
-              {movie.genre.map(g => (
+              {movie.genre?.map((g: string) => (
                 <span key={g} className="px-4 py-1.5 bg-primary/20 backdrop-blur-md text-primary text-[10px] font-black rounded-lg uppercase tracking-widest border border-primary/30 shadow-inner-gold">
                   {g}
                 </span>
@@ -81,11 +127,11 @@ const MovieDetail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="glass-card p-8 rounded-[2.5rem] shadow-inner-glossy">
               <p className="text-[10px] text-primary uppercase font-black tracking-[0.4em] mb-3">Director</p>
-              <p className="text-2xl text-white font-black">{movie.director}</p>
+              <p className="text-2xl text-white font-black">{movie.director || 'N/A'}</p>
             </div>
             <div className="glass-card p-8 rounded-[2.5rem] shadow-inner-glossy">
               <p className="text-[10px] text-primary uppercase font-black tracking-[0.4em] mb-3">Principal Cast</p>
-              <p className="text-xl text-white font-black truncate">{movie.cast.join(', ')}</p>
+              <p className="text-xl text-white font-black truncate">{movie.cast?.join(', ') || 'N/A'}</p>
             </div>
           </div>
 
