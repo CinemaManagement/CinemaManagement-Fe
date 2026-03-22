@@ -19,6 +19,7 @@ import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import FoodManagement from "@/pages/foods/FoodManagement";
+import ShowtimesPage from "@/pages/showtimes";
 import RoomManagement from "@/pages/rooms/RoomManagement";
 import RoomForm from "@/pages/rooms/RoomForm";
 import {UserRole} from "@/types/document";
@@ -43,6 +44,7 @@ const Router = () => {
         <Route path={URL.Movies} element={<Movies />} />
         <Route path="/movies/add" element={<MovieForm />} />
         <Route path="/movies/edit/:id" element={<MovieForm />} />
+        <Route path={URL.Showtimes} element={<ShowtimesPage />} />
         {user?.role === UserRole.CUSTOMER && (
           <Route
             path={URL.Showtimes}

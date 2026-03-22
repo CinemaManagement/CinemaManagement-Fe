@@ -3,7 +3,6 @@ import {Route, Routes} from "react-router-dom";
 
 import URL from "@/constants/url";
 import type {ItemRouteType} from "@/types/routes/router.type";
-
 import DefaultLayout from "./DefaultLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 
@@ -21,6 +20,7 @@ import FoodMenu from "@/pages/food";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
+import Showtimes from "@/pages/showtimes";
 import {UserRole} from "@/types/document";
 import FoodManagement from "@/pages/foods/FoodManagement";
 import RoomManagement from "@/pages/rooms/RoomManagement";
@@ -36,9 +36,7 @@ export const menuRouterItems: ItemRouteType[] = [
   },
   {
     key: URL.Showtimes,
-    components: (
-      <div className="p-20 text-center text-2xl text-white">Showtimes coming soon...</div>
-    ),
+    components: <Showtimes />,
     layout: "default",
     roles: [UserRole.CUSTOMER],
     title: "Showtimes",

@@ -145,14 +145,17 @@ export interface ShowtimeSeat extends Seat {
 
 export interface Showtime {
   _id: string;
-  movieId: string;
-  startTime: Date;
-  endTime: Date;
+  movieId: Movie | string;
+  cinemaRoomId: CinemaRoom | string;
+  startTime: string;
+  endTime: string;
   status: ShowtimeStatus;
   pricingRule: {
     [key in SeatType]: number;
   };
   seats: ShowtimeSeat[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const BookingStatus = {
@@ -179,6 +182,7 @@ export interface MovieBooking {
   totalAmount: number;
   status: BookingStatus;
   foodBookingId?: string;
+  foodBooking?: FoodBooking | null;
   payment: {
     method: PaymentMethod;
     paidAt?: Date;

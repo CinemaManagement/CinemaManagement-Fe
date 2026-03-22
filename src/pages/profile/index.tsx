@@ -1,320 +1,380 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {useAppSelector} from "../../store";
+import { useAppSelector } from "../../store";
 import {
-  User,
-  Ticket,
-  Settings,
-  Shield,
-  ChevronRight,
-  Download,
-  QrCode,
-  Film,
-  Loader2,
+   User,
+   Ticket,
+   Shield,
+   ChevronRight,
+   Download,
+   Film,
+   Loader2,
 } from "lucide-react";
-import {useState, useEffect} from "react";
-import {getBookingHistory} from "../../services/api/bookingApi";
-import {authApi} from "../../services/api/authApi";
-import {toast} from "react-hot-toast";
-import type {MovieBooking, Showtime} from "@/types/document";
+import { useState, useEffect } from "react";
+import { getBookingHistory } from "../../services/api/bookingApi";
+import { authApi } from "../../services/api/authApi";
+import { toast } from "react-hot-toast";
+import type { MovieBooking, Showtime } from "@/types/document";
 
 const Profile = () => {
-  const {user} = useAppSelector((state) => state.auth);
-  const [activeTab, setActiveTab] = useState("Account Details");
-  const [bookings, setBookings] = useState<MovieBooking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+   const { user } = useAppSelector((state) => state.auth);
+   const [activeTab, setActiveTab] = useState("Account Details");
+   const [bookings, setBookings] = useState<MovieBooking[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
 
-  // Security form state
-  const [securityForm, setSecurityForm] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+   // Security form state
+   const [securityForm, setSecurityForm] = useState({
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+   });
+   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+   useEffect(() => {
+      fetchBookings();
+   }, []);
 
-  const fetchBookings = async () => {
-    try {
-      setIsLoading(true);
-      const res = await getBookingHistory();
-      // The backend return { rawMovieBookingHistory, foodBookingHistory }
-      setBookings(res.data.rawMovieBookingHistory || []);
-    } catch (error) {
-      console.error("Failed to fetch bookings:", error);
-      toast.error("Failed to load booking history");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+   const fetchBookings = async () => {
+      try {
+         setIsLoading(true);
+         const res = await getBookingHistory();
+         // The backend return { rawMovieBookingHistory, foodBookingHistory }
+         setBookings(res.rawMovieBookingHistory || []);
+      } catch (error) {
+         console.error("Failed to fetch bookings:", error);
+         toast.error("Failed to load booking history");
+      } finally {
+         setIsLoading(false);
+      }
+   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (securityForm.newPassword !== securityForm.confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
+   const handlePasswordChange = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (securityForm.newPassword !== securityForm.confirmPassword) {
+         toast.error("New passwords do not match");
+         return;
+      }
 
-    try {
-      setIsUpdatingPassword(true);
-      await authApi.changePassword({
-        oldPassword: securityForm.oldPassword,
-        newPassword: securityForm.newPassword,
-      });
-      toast.success("Password changed successfully");
-      setSecurityForm({oldPassword: "", newPassword: "", confirmPassword: ""});
-    } catch (error: any) {
-      const message = error.response?.data?.message || "Failed to change password";
-      toast.error(message);
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  };
+      try {
+         setIsUpdatingPassword(true);
+         await authApi.changePassword({
+            oldPassword: securityForm.oldPassword,
+            newPassword: securityForm.newPassword,
+         });
+         toast.success("Password changed successfully");
+         setSecurityForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      } catch (error: any) {
+         const message = error.response?.data?.message || "Failed to change password";
+         toast.error(message);
+      } finally {
+         setIsUpdatingPassword(false);
+      }
+   };
 
-  const renderBookingItem = (booking: MovieBooking) => {
-    const showtime = booking.showtimeId as unknown as Showtime;
-    const date = showtime?.startTime ? new Date(showtime.startTime).toLocaleDateString() : "N/A";
-    const time = showtime?.startTime
-      ? new Date(showtime.startTime).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})
-      : "N/A";
+   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
 
-    return (
-      <div key={booking._id} className="group relative">
-        <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-r to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-        <div className="bg-background/50 border-border hover:border-primary/30 flex flex-col justify-between rounded-2xl border p-6 transition-all md:flex-row md:items-center">
-          <div className="flex items-start gap-6">
-            <div className="bg-accent/20 text-primary flex h-20 w-16 shrink-0 items-center justify-center rounded-lg">
-              <Film className="h-8 w-8 opacity-40" />
-            </div>
-            <div>
-              <div className="mb-1 flex items-center gap-3">
-                <h3 className="text-lg font-bold tracking-tight text-white uppercase">
-                  Movie Booking
-                </h3>
-                <span
-                  className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${
-                    booking.status === "PAID"
-                      ? "bg-green-500/20 text-green-500"
-                      : "bg-primary/20 text-primary"
-                  }`}
-                >
-                  {booking.status}
-                </span>
-              </div>
-              <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                {date} • {time} • Seats:{" "}
-                <span className="text-primary font-bold">
-                  {booking.seats.map((s) => s.seatCode).join(", ")}
-                </span>
-              </p>
-              <p className="text-muted-foreground mt-2 text-xs">
-                Booking ID: {booking.bookingCode}
-              </p>
-            </div>
-          </div>
+   const renderBookingItem = (booking: MovieBooking) => {
+      const showtime = booking.showtimeId as any;
+      const movie = showtime?.movieId;
+      const isExpanded = expandedBooking === booking._id;
 
-          <div className="mt-4 flex items-end gap-3 md:mt-0 md:flex-col">
-            <span className="text-xl font-black text-white">${booking.totalAmount.toFixed(2)}</span>
-            <div className="flex gap-2">
-              <button
-                className="bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2 transition-colors"
-                title="Download PDF"
-              >
-                <Download className="h-5 w-5" />
-              </button>
-              <button
-                className="bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2 transition-colors"
-                title="Show QR Code"
-              >
-                <QrCode className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+      return (
+         <div key={booking._id} className="group relative">
+            <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-2xl bg-linear-to-r to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+            <div
+               onClick={() => setExpandedBooking(isExpanded ? null : booking._id)}
+               className={`bg-background/50 border-border hover:border-primary/30 flex flex-col justify-between rounded-2xl border p-6 transition-all cursor-pointer ${isExpanded ? 'border-primary/50 ring-1 ring-primary/20' : ''}`}
+            >
+               <div className="flex flex-col md:flex-row md:items-center justify-between w-full">
+                  <div className="flex items-start gap-6">
+                     <div className="bg-accent/20 text-primary flex h-20 w-16 shrink-0 items-center justify-center rounded-lg overflow-hidden border border-border/50">
+                        {movie?.posterUrl ? (
+                           <img src={movie.posterUrl} alt={movie.title} className="w-full h-full object-cover" />
+                        ) : (
+                           <Film className="h-8 w-8 opacity-40" />
+                        )}
+                     </div>
+                     <div>
+                        <div className="mb-1 flex items-center gap-3">
+                           <h3 className="text-lg font-bold tracking-tight text-white uppercase line-clamp-1">
+                              {movie?.title || "Movie Booking"}
+                           </h3>
+                           <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-black uppercase ${booking.status === "PAID"
+                                 ? "bg-green-500/20 text-green-500"
+                                 : "bg-primary/20 text-primary"
+                                 }`}
+                           >
+                              {booking.status}
+                           </span>
+                        </div>
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "Account Details":
-        return (
-          <div className="space-y-8">
-            <div className="bg-card border-border rounded-3xl border p-8">
-              <h2 className="mb-8 flex items-center gap-3 text-2xl font-black tracking-tighter text-white uppercase">
-                <Ticket className="text-primary h-7 w-7" /> Recent Bookings
-              </h2>
-
-              {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <Loader2 className="text-primary h-8 w-8 animate-spin" />
-                </div>
-              ) : bookings.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {bookings.slice(0, 3).map(renderBookingItem)}
-                  {bookings.length > 3 && (
-                    <button
-                      onClick={() => setActiveTab("My Bookings")}
-                      className="border-border text-muted-foreground hover:bg-accent/20 mt-6 w-full rounded-2xl border py-4 text-sm font-bold tracking-widest uppercase transition-all"
-                    >
-                      View Full History
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="border-border rounded-2xl border border-dashed py-12 text-center">
-                  <p className="text-muted-foreground">No bookings found</p>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      case "My Bookings":
-        return (
-          <div className="bg-card border-border rounded-3xl border p-8">
-            <h2 className="mb-8 flex items-center gap-3 text-2xl font-black tracking-tighter text-white uppercase">
-              <Ticket className="text-primary h-7 w-7" /> All Bookings
-            </h2>
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="text-primary h-8 w-8 animate-spin" />
-              </div>
-            ) : bookings.length > 0 ? (
-              <div className="flex flex-col gap-4">{bookings.map(renderBookingItem)}</div>
-            ) : (
-              <div className="border-border rounded-2xl border border-dashed py-12 text-center">
-                <p className="text-muted-foreground">No bookings found</p>
-              </div>
-            )}
-          </div>
-        );
-      case "Security":
-        return (
-          <div className="bg-card border-border rounded-3xl border p-8">
-            <h2 className="mb-8 flex items-center gap-3 text-2xl font-black tracking-tighter text-white uppercase">
-              <Shield className="text-primary h-7 w-7" /> Security Settings
-            </h2>
-            <form onSubmit={handlePasswordChange} className="max-w-md space-y-6">
-              <div className="space-y-2">
-                <label className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  className="bg-background border-border focus:border-primary w-full rounded-xl border px-4 py-3 text-white transition-colors focus:outline-none"
-                  value={securityForm.oldPassword}
-                  onChange={(e) => setSecurityForm({...securityForm, oldPassword: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  className="bg-background border-border focus:border-primary w-full rounded-xl border px-4 py-3 text-white transition-colors focus:outline-none"
-                  value={securityForm.newPassword}
-                  onChange={(e) => setSecurityForm({...securityForm, newPassword: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  className="bg-background border-border focus:border-primary w-full rounded-xl border px-4 py-3 text-white transition-colors focus:outline-none"
-                  value={securityForm.confirmPassword}
-                  onChange={(e) =>
-                    setSecurityForm({...securityForm, confirmPassword: e.target.value})
-                  }
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={isUpdatingPassword}
-                className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-black tracking-widest uppercase transition-all hover:opacity-90 disabled:opacity-50"
-              >
-                {isUpdatingPassword ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  "Update Password"
-                )}
-              </button>
-            </form>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex flex-col items-start gap-8 md:flex-row">
-        {/* Sidebar */}
-        <div className="flex w-full flex-col gap-6 md:w-80">
-          <div className="bg-card border-border relative overflow-hidden rounded-3xl border p-8">
-            <div className="absolute top-0 right-0 p-4 opacity-5">
-              <User className="h-32 w-32" />
-            </div>
-            <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="bg-primary/20 border-background flex h-24 w-24 items-center justify-center rounded-full border-4 shadow-xl">
-                <User className="text-primary h-12 w-12" />
-              </div>
-              <div className="text-center">
-                <h2 className="text-xl font-bold tracking-tight text-white uppercase">
-                  {user?.email?.split("@")[0] || "Guest User"}
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  {user?.email || "guest@example.com"}
-                </p>
-                <span className="bg-primary text-primary-foreground mt-3 inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase">
-                  {user?.role || "CUSTOMER"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-card border-border rounded-3xl border p-4">
-            <nav className="flex flex-col gap-1">
-              {[
-                {icon: User, label: "Account Details"},
-                {icon: Ticket, label: "My Bookings"},
-                {icon: Shield, label: "Security"},
-                {icon: Settings, label: "Preferences"},
-              ].map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveTab(item.label)}
-                  className={`flex items-center justify-between rounded-2xl p-4 transition-all ${
-                    activeTab === item.label
-                      ? "bg-primary text-primary-foreground shadow-primary/20 shadow-lg"
-                      : "text-muted-foreground hover:bg-accent/20 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="h-5 w-5" />
-                    <span className="font-bold">{item.label}</span>
+                           <span className="w-1 h-1 bg-border rounded-full" />
+                           <span>Seats: <span className="text-primary font-bold">{booking.seats.map((s) => s.seatCode).join(", ")}</span></span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-2 font-mono opacity-50 uppercase tracking-widest">
+                           Booking ID: {booking.bookingCode}
+                        </p>
+                     </div>
                   </div>
-                  <ChevronRight
-                    className={`h-5 w-5 transition-transform ${activeTab === item.label ? "rotate-90 opacity-100" : "opacity-50"}`}
-                  />
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1">{renderContent()}</div>
+                  <div className="mt-4 flex items-end justify-between md:justify-end gap-6 md:mt-0">
+                     <div className="text-right">
+                        <p className="text-[10px] text-muted-foreground uppercase font-black mb-1 opacity-50">Total Paid</p>
+                        <span className="text-2xl font-black text-white leading-none">${booking.totalAmount.toFixed(2)}</span>
+                     </div>
+                     <div className="flex gap-2">
+                        <button
+                           className="bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2.5 transition-colors"
+                           title="Download PDF"
+                           onClick={(e) => e.stopPropagation()}
+                        >
+                           <Download className="h-5 w-5" />
+                        </button>
+                        <button
+                           className={`bg-accent/20 text-muted-foreground hover:text-primary border-border rounded-lg border p-2.5 transition-all ${isExpanded ? 'rotate-180 bg-primary/10 text-primary border-primary/30' : ''}`}
+                           title="View Details"
+                        >
+                           <ChevronRight className="h-5 w-5" />
+                        </button>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Expanded Details */}
+               {isExpanded && (
+                  <div className="mt-6 pt-6 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                           <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">Seat Selection Details</h4>
+                           <div className="space-y-3">
+                              {booking.seats.map((seat, idx) => (
+                                 <div key={idx} className="flex items-center justify-between p-3 bg-accent/10 rounded-xl border border-border/30">
+                                    <div className="flex items-center gap-3">
+                                       <span className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-xs">
+                                          {seat.seatCode}
+                                       </span>
+                                       <div>
+                                          <p className="text-xs font-bold text-white uppercase">{seat.type} SEAT</p>
+                                          <p className="text-[10px] text-muted-foreground uppercase">Row {seat.seatCode.charAt(0)}</p>
+                                       </div>
+                                    </div>
+                                    <span className="text-sm font-bold text-white">${seat.price.toFixed(2)}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+
+                        <div>
+                           <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-4">Order Summary</h4>
+                           <div className="bg-accent/10 rounded-2xl p-5 border border-border/30 space-y-4">
+                              <div className="flex justify-between text-xs">
+                                 <span className="text-muted-foreground">Original Ticket Price</span>
+                                 <span className="text-white font-bold">${booking.seats.reduce((acc, s) => acc + s.price, 0).toFixed(2)}</span>
+                              </div>
+                              {booking.foodBooking && (
+                                 <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Food & Drinks Bundle</span>
+                                    <span className="text-white font-bold">${(booking.foodBooking as any).totalAmount.toFixed(2)}</span>
+                                 </div>
+                              )}
+                              <div className="h-px bg-border/50" />
+                              <div className="flex justify-between">
+                                 <span className="text-xs font-black text-white uppercase tracking-wider">Grand Total</span>
+                                 <span className="text-lg font-black text-primary">${booking.totalAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="pt-2">
+                                 <button className="w-full py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all transform hover:scale-[1.02] active:scale-95">
+                                    Re-order Same Tickets
+                                 </button>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               )}
+            </div>
+         </div>
+      );
+   };
+
+   const renderContent = () => {
+      switch (activeTab) {
+         case "Account Details":
+            return (
+               <div className="space-y-8">
+                  <div className="bg-card border-border rounded-3xl border p-8">
+                     <h2 className="mb-8 flex items-center gap-3 text-2xl font-black tracking-tighter text-white uppercase">
+                        <Ticket className="text-primary h-7 w-7" /> Recent Bookings
+                     </h2>
+
+                     {isLoading ? (
+                        <div className="flex justify-center py-12">
+                           <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                        </div>
+                     ) : bookings.length > 0 ? (
+                        <div className="flex flex-col gap-4">
+                           {bookings.slice(0, 3).map(renderBookingItem)}
+                           {bookings.length > 3 && (
+                              <button
+                                 onClick={() => setActiveTab("My Bookings")}
+                                 className="border-border text-muted-foreground hover:bg-accent/20 mt-6 w-full rounded-2xl border py-4 text-sm font-bold tracking-widest uppercase transition-all"
+                              >
+                                 View Full History
+                              </button>
+                           )}
+                        </div>
+                     ) : (
+                        <div className="border-border rounded-2xl border border-dashed py-12 text-center">
+                           <p className="text-muted-foreground">No bookings found</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            );
+         case "My Bookings":
+            return (
+               <div className="bg-card border-border rounded-3xl border p-8">
+                  <h2 className="mb-8 flex items-center gap-3 text-2xl font-black tracking-tighter text-white uppercase">
+                     <Ticket className="text-primary h-7 w-7" /> All Bookings
+                  </h2>
+                  {isLoading ? (
+                     <div className="flex justify-center py-12">
+                        <Loader2 className="text-primary h-8 w-8 animate-spin" />
+                     </div>
+                  ) : bookings.length > 0 ? (
+                     <div className="flex flex-col gap-4">{bookings.map(renderBookingItem)}</div>
+                  ) : (
+                     <div className="border-border rounded-2xl border border-dashed py-12 text-center">
+                        <p className="text-muted-foreground">No bookings found</p>
+                     </div>
+                  )}
+               </div>
+            );
+         case "Security":
+            return (
+               <div className="bg-card border-border rounded-3xl border p-8">
+                  <h2 className="mb-8 flex items-center gap-3 text-2xl font-black tracking-tighter text-white uppercase">
+                     <Shield className="text-primary h-7 w-7" /> Security Settings
+                  </h2>
+                  <form onSubmit={handlePasswordChange} className="max-w-md space-y-6">
+                     <div className="space-y-2">
+                        <label className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
+                           Current Password
+                        </label>
+                        <input
+                           type="password"
+                           required
+                           className="bg-background border-border focus:border-primary w-full rounded-xl border px-4 py-3 text-white transition-colors focus:outline-none"
+                           value={securityForm.oldPassword}
+                           onChange={(e) => setSecurityForm({ ...securityForm, oldPassword: e.target.value })}
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
+                           New Password
+                        </label>
+                        <input
+                           type="password"
+                           required
+                           className="bg-background border-border focus:border-primary w-full rounded-xl border px-4 py-3 text-white transition-colors focus:outline-none"
+                           value={securityForm.newPassword}
+                           onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <label className="text-muted-foreground text-sm font-bold tracking-wider uppercase">
+                           Confirm New Password
+                        </label>
+                        <input
+                           type="password"
+                           required
+                           className="bg-background border-border focus:border-primary w-full rounded-xl border px-4 py-3 text-white transition-colors focus:outline-none"
+                           value={securityForm.confirmPassword}
+                           onChange={(e) =>
+                              setSecurityForm({ ...securityForm, confirmPassword: e.target.value })
+                           }
+                        />
+                     </div>
+                     <button
+                        type="submit"
+                        disabled={isUpdatingPassword}
+                        className="bg-primary text-primary-foreground flex w-full items-center justify-center gap-2 rounded-2xl py-4 font-black tracking-widest uppercase transition-all hover:opacity-90 disabled:opacity-50"
+                     >
+                        {isUpdatingPassword ? (
+                           <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                           "Update Password"
+                        )}
+                     </button>
+                  </form>
+               </div>
+            );
+         default:
+            return null;
+      }
+   };
+
+   return (
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+         <div className="flex flex-col items-start gap-8 md:flex-row">
+            {/* Sidebar */}
+            <div className="flex w-full flex-col gap-6 md:w-80">
+               <div className="bg-card border-border relative overflow-hidden rounded-3xl border p-8">
+                  <div className="absolute top-0 right-0 p-4 opacity-5">
+                     <User className="h-32 w-32" />
+                  </div>
+                  <div className="relative z-10 flex flex-col items-center gap-4">
+                     <div className="bg-primary/20 border-background flex h-24 w-24 items-center justify-center rounded-full border-4 shadow-xl">
+                        <User className="text-primary h-12 w-12" />
+                     </div>
+                     <div className="text-center">
+                        <h2 className="text-xl font-bold tracking-tight text-white uppercase">
+                           {user?.email?.split("@")[0] || "Guest User"}
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                           {user?.email || "guest@example.com"}
+                        </p>
+                        <span className="bg-primary text-primary-foreground mt-3 inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase">
+                           {user?.role || "CUSTOMER"}
+                        </span>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="bg-card border-border rounded-3xl border p-4">
+                  <nav className="flex flex-col gap-1">
+                     {[
+                        { icon: User, label: "Account Details" },
+                        { icon: Ticket, label: "My Bookings" },
+                        { icon: Shield, label: "Security" },
+                     ].map((item, i) => (
+                        <button
+                           key={i}
+                           onClick={() => setActiveTab(item.label)}
+                           className={`flex items-center justify-between rounded-2xl p-4 transition-all ${activeTab === item.label
+                              ? "bg-primary text-primary-foreground shadow-primary/20 shadow-lg"
+                              : "text-muted-foreground hover:bg-accent/20 hover:text-white"
+                              }`}
+                        >
+                           <div className="flex items-center gap-3">
+                              <item.icon className="h-5 w-5" />
+                              <span className="font-bold">{item.label}</span>
+                           </div>
+                           <ChevronRight
+                              className={`h-5 w-5 transition-transform ${activeTab === item.label ? "rotate-90 opacity-100" : "opacity-50"}`}
+                           />
+                        </button>
+                     ))}
+                  </nav>
+               </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1">{renderContent()}</div>
+         </div>
       </div>
-    </div>
-  );
+   );
 };
 
 export default Profile;

@@ -1,17 +1,23 @@
-import request from '../api';
+import request from "../api";
 
 export const showtimeApi = {
   createShowtime: (data: Record<string, unknown>) => {
     return request({
-      url: '/api/showtimes',
-      method: 'POST',
+      url: "/api/showtimes",
+      method: "POST",
       data,
+    });
+  },
+  getAllShowtimes: () => {
+    return request({
+      url: "/api/showtimes",
+      method: "GET",
     });
   },
   getShowtimesByMovie: (movieId: string) => {
     return request({
       url: `/api/showtimes/movie/${movieId}`,
-      method: 'GET',
+      method: "GET",
     });
   },
 };
