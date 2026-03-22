@@ -1,16 +1,37 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {useState, useRef, useEffect} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {ChevronLeft, Info, Armchair, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
+import type { Movie, Showtime } from "@/types/document";
 import { movieApi } from "@/services/api/movieApi";
+import { showtimeApi } from "@/services/api/showtimeApi";
 const SeatSelection = () => {
   const {showtimeId} = useParams();
   const navigate = useNavigate();
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-
+  const [movie, setMovie] = useState<Movie | null>(null);
   const movieId = showtimeId?.split("-")[0];
-  const [movie, setMovie] = useState<any>({});
+  const [showtime, setShowtime] = useState<Showtime | null>(null);
+
+
+  
+  useEffect(() => {
+    if(movieId)
+      movieApi.getMovieById(movieId).then((res) => {
+        setMovie(res.data);
+      }).catch((err) => {
+        toast.error(err.response.data.message);
+      });
+  },[movieId])
+
+  useEffect(() => {
+    if(showtimeId)
+      showtimeApi.getShowtimeById(showtimeId).then((res) => {
+        setShowtime(res.data);
+      }).catch((err) => {
+        toast.error(err.response.data.message);
+      });
+  },[showtimeId])
 
   useEffect(() => {
     const fetchMovie = async () => {

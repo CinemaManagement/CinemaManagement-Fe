@@ -1,11 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useState, useEffect} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
-import {ChevronLeft, Plus, Minus, ShoppingBag, Info, Ticket, Loader2} from "lucide-react";
+import {
+  ChevronLeft,
+  Plus,
+  Minus,
+  ShoppingBag,
+  Info,
+  Ticket,
+  Loader2,
+  ShoppingCart,
+} from "lucide-react";
 import {movieApi} from "@/services/api/movieApi";
 import {createFoodBooking, createMovieBooking} from "@/services/api/bookingApi";
 import toast from "react-hot-toast";
 import {foodApi} from "@/services/api/foodApi";
+import {cartApi} from "@/services/api/cartApi";
 
 const formatVND = (amount: number) =>
   new Intl.NumberFormat("vi-VN", {style: "currency", currency: "VND"}).format(amount);
@@ -23,6 +33,10 @@ const FoodSelection = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const [userCart, setUserCart] = useState<any>(null);
+  const [cartAdded, setCartAdded] = useState(false);
+  
+
   useEffect(() => {
     // Fetch food menu from backend
     foodApi
@@ -38,6 +52,10 @@ const FoodSelection = () => {
       })
       .finally(() => setLoading(false));
 
+    cartApi.getCart().then((res: any) => {
+      const data = res.data?.data ?? res.data;
+      setUserCart(data);
+    });
     if (movieId) {
       movieApi
         .getMovieById(movieId)
@@ -60,11 +78,44 @@ const FoodSelection = () => {
       return acc + item.price * (cart[id] || 0);
     }, 0);
 
-  const handleCheckout = async () => {
-    if (!showtimeId || seats.length === 0) {
-      toast.error("Missing booking details!");
+  const handleAddFromCart = () => {
+    // The cart can be { items: [...] } or just an array depending on backend serialization
+    const itemsArray = Array.isArray(userCart?.items)
+      ? userCart.items
+      : Array.isArray(userCart)
+        ? userCart
+        : [];
+
+    if (itemsArray.length === 0) {
+      toast.error("Your card is empty!");
       return;
     }
+
+    setCart((prev) => {
+      const newCart = {...prev};
+      itemsArray.forEach((item: any) => {
+        // Handle variations where foodId might be populated or an object
+        const id = item.foodId?._id || item.foodId?.id || item.foodId || item._id || item.id;
+        const qty = item.quantity || 1;
+
+        if (id) {
+          newCart[id] = (newCart[id] || 0) + qty;
+        }
+      });
+      return newCart;
+    });
+
+    setCartAdded(true);
+    toast.success("Added food from your card!");
+
+
+  };
+
+  const handleCheckout = async () => {
+    // if (!showtimeId || seats.length === 0) {
+    //   toast.error("Missing booking details!");
+    //   return;
+    // }
     setSubmitting(true);
     try {
       let foodBookingId: string | undefined;
@@ -76,13 +127,11 @@ const FoodSelection = () => {
       if (cartItems.length > 0) {
         const foodRes = await createFoodBooking(cartItems);
         foodBookingId = foodRes._id ?? foodRes.data?._id;
+        cartApi.clearCart();
       }
 
-      const movieRes = await createMovieBooking(showtimeId, seats, foodBookingId);
-      const bookingId = movieRes._id ?? movieRes.data?._id;
-
       toast.success("Booking placed successfully!");
-      navigate(`/payment-success?bookingId=${bookingId}`);
+      // navigate(`/payment-success?bookingId=${bookingId}`);
     } catch (error: any) {
       console.error(error);
       toast.error(error?.response?.data?.message ?? "Something went wrong.");
@@ -278,18 +327,22 @@ const FoodSelection = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={submitting}
-                  className="btn-glossy bg-primary text-primary-foreground flex w-full items-center justify-center gap-3 rounded-3xl py-6 text-sm font-black tracking-[0.2em] uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                  className="btn-glossy bg-primary text-primary-foreground flex w-full items-center justify-center gap-3 rounded-3xl py-6 text-sm font-black tracking-[0.2em] uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_20px_60px_-10px_rgba(var(--primary),0.6)] hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
                   {submitting ? "Processing..." : "Make Payment"}
                 </button>
 
-                <div className="shadow-inner-glossy flex items-center justify-center gap-3 rounded-2xl border border-white/5 bg-white/5 py-4">
-                  <Ticket className="text-primary h-5 w-5 opacity-50" />
-                  <span className="text-[10px] font-black tracking-widest text-white/30 uppercase">
-                    Secure Checkout
+                <button
+                  onClick={handleAddFromCart}
+                  disabled={cartAdded || submitting}
+                  className="group shadow-inner-glossy flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-white/5 bg-white/5 py-4 transition-all duration-300 hover:scale-[1.02] hover:border-white/10 hover:bg-white/10 hover:shadow-lg hover:shadow-white/5 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <ShoppingCart className="text-primary h-5 w-5 opacity-50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:opacity-100" />
+                  <span className="text-[10px] font-black tracking-widest text-white/30 uppercase transition-all duration-300 group-hover:text-white/90">
+                    {cartAdded ? "Added From Card" : "Add From Card"}
                   </span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
