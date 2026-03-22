@@ -87,13 +87,14 @@
   --border: oklch(1 0 0 / 15%);
 }
 
+@utility shadow-inner-glossy {
+  box-shadow: inset 0 2px 4px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 4px 0 rgba(0, 0, 0, 0.4);
+}
+@utility shadow-inner-gold {
+  box-shadow: inset 0 2px 10px 0 rgba(197, 160, 89, 0.3);
+}
+
 @layer utilities {
-  .shadow-inner-glossy {
-    box-shadow: inset 0 2px 4px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 4px 0 rgba(0, 0, 0, 0.4);
-  }
-  .shadow-inner-gold {
-    box-shadow: inset 0 2px 10px 0 rgba(197, 160, 89, 0.3);
-  }
   .glass-card {
     @apply bg-card/40 backdrop-blur-xl border border-white/10 shadow-xl;
   }
