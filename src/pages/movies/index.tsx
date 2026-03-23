@@ -23,9 +23,9 @@ const Movies = () => {
     try {
       setIsLoading(true);
       const response =
-        user?.role === UserRole.CUSTOMER
-          ? await movieApi.getMovies()
-          : await movieApi.getMoviesByManager();
+        user?.role === UserRole.MANAGER
+          ? await movieApi.getMoviesByManager()
+          : await movieApi.getMovies();
       setMovies(response.data?.data || response.data || []);
     } catch {
       toast.error("Failed to fetch movies.");
@@ -75,7 +75,7 @@ const Movies = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-32 font-sans">
-      {user?.role === UserRole.CUSTOMER && (
+      {(!user?.role || user?.role !== UserRole.MANAGER) && (
         <section className="relative overflow-hidden bg-black px-4 py-16 md:px-8">
           <div className="pointer-events-none absolute top-0 left-1/2 h-[1000px] w-full -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
 
@@ -110,7 +110,7 @@ const Movies = () => {
         </section>
       )}
 
-      {user?.role === UserRole.CUSTOMER && (
+      {(!user?.role || user?.role !== UserRole.MANAGER) && (
         <section className="relative overflow-hidden px-4 py-32 md:px-8">
           <div className="relative z-20 mx-auto max-w-[1800px]">
             <div className="text-center">

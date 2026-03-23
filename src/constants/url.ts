@@ -15,6 +15,8 @@ const URL = {
   FoodManagement: "/admin/foods",
   FoodSelection: "/food-selection",
   Booking: "/booking/:showtimeId",
+  PaymentMethod: "/payment-method",
+  VnpayReturn: "/vnpay-return",
   PaymentSuccess: "/payment-success",
   Profile: "/profile",
 
