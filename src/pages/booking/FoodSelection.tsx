@@ -12,7 +12,7 @@ import {
   Clock,
 } from "lucide-react";
 import {movieApi} from "@/services/api/movieApi";
-import {createFoodBooking, addFoodToBooking, confirmPayment, cancelBooking} from "@/services/api/bookingApi";
+import {createFoodBooking, addFoodToBooking, cancelBooking} from "@/services/api/bookingApi";
 import toast from "react-hot-toast";
 import {foodApi} from "@/services/api/foodApi";
 import {cartApi} from "@/services/api/cartApi";
@@ -141,8 +141,6 @@ const FoodSelection = () => {
     
     setSubmitting(true);
     try {
-      let foodBookingId: string | undefined;
-
       const cartItems = Object.entries(cart)
         .filter(([, qty]) => qty > 0)
         .map(([foodId, quantity]) => ({foodId, quantity}));
@@ -150,7 +148,7 @@ const FoodSelection = () => {
       // 1. Process food order and attach to the initial Held reservation
       if (cartItems.length > 0) {
         const foodRes = await createFoodBooking(cartItems);
-        foodBookingId = foodRes._id || foodRes.data?._id;
+        const foodBookingId = foodRes._id || foodRes.data?._id;
         
         if (foodBookingId) {
           await addFoodToBooking(movieBookingId, foodBookingId);
@@ -158,14 +156,19 @@ const FoodSelection = () => {
         await cartApi.clearCart();
       }
 
-      // 2. Mock transaction details to finish checkout process
-      await confirmPayment(movieBookingId, { method: "ONLINE", transactionId: `TRX_${Date.now()}` });
-
-      toast.success("Payment confirmed! See your ticket details.");
-      navigate(`/payment-success?bookingId=${movieBookingId}`);
+      // 2. Navigate to payment method selection (VNPay)
+      const params = new URLSearchParams({
+        movieBookingId,
+        ...(movieId && { movieId }),
+        ...(expiredAtParam && { expiredAt: expiredAtParam }),
+        seats: seats.join(","),
+        ticketTotal: String(ticketPrice),
+        foodTotal: String(foodTotal),
+      });
+      navigate(`/payment-method?${params.toString()}`);
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.response?.data?.message || "Something went wrong processing payment.");
+      toast.error(error?.response?.data?.message || "Something went wrong.");
     } finally {
       setSubmitting(false);
     }

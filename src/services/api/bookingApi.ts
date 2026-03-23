@@ -30,6 +30,14 @@ export const confirmPayment = (id: string, data: PaymentData) => {
   }).then(res => res.data);
 };
 
+export const createVnpayPaymentUrl = (id: string, discountCode?: string) => {
+  return request({
+    url: `/api/bookings/${id}/create-vnpay-url`,
+    method: 'POST',
+    data: discountCode ? { discountCode } : {}
+  }).then(res => res.data);
+};
+
 export const getBookingHistory = () => {
   return request({
     url: '/api/bookings/history',
