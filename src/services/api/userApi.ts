@@ -27,4 +27,10 @@ export const userApi = {
       data,
     });
   },
+  deleteAccount: (id: string) => {
+    return request({
+      url: `/api/users/${id}`,
+      method: 'DELETE',
+    });
+  },
 };

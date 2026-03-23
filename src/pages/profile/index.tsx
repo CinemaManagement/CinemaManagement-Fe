@@ -1,9 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import {useAppSelector} from "../../store";
-import {User, Ticket, Shield, ChevronRight, Download, Film, Loader2} from "lucide-react";
+import {useAppDispatch, useAppSelector} from "../../store";
+import {
+  User,
+  Ticket,
+  Shield,
+  ChevronRight,
+  Download,
+  Film,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import {useState, useEffect} from "react";
+import {useNavigate} from "react-router-dom";
 import {getBookingHistory} from "../../services/api/bookingApi";
 import {authApi} from "../../services/api/authApi";
+import {userApi} from "../../services/api/userApi";
+import {logout} from "../../store/slices/authSlice";
 import {toast} from "react-hot-toast";
 import type {MovieBooking} from "@/types/document";
 
@@ -20,6 +31,10 @@ const Profile = () => {
     confirmPassword: "",
   });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     fetchBookings();
@@ -59,6 +74,30 @@ const Profile = () => {
       toast.error(message);
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?._id) return;
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete your account? This action cannot be undone."
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setIsDeletingAccount(true);
+      await userApi.deleteAccount(user._id);
+      toast.success("Account deleted successfully");
+      dispatch(logout());
+      navigate("/");
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Failed to delete account";
+      toast.error(message);
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -334,6 +373,36 @@ const Profile = () => {
                 )}
               </button>
             </form>
+
+            {user?.role === "CUSTOMER" && (
+              <div className="border-border mt-12 border-t pt-8">
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white uppercase">
+                      Danger Zone
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Deleting your account will permanently remove all your
+                      data.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={isDeletingAccount}
+                    className="border-red-500/50 text-red-500 hover:bg-red-500/10 flex w-full max-w-md items-center justify-center gap-2 rounded-2xl border py-4 font-black tracking-widest uppercase transition-all disabled:opacity-50"
+                  >
+                    {isDeletingAccount ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Trash2 className="h-5 w-5" />
+                        Delete Account
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       default:
