@@ -174,7 +174,7 @@ const FoodSelection = () => {
     }
   };
 
-  const ticketPrice = seats.length * 75000;
+  const ticketPrice = Number(searchParams.get("ticketTotal")) || 0;
   const foodTotal = calculateTotal();
   const grandTotal = ticketPrice + foodTotal;
 
