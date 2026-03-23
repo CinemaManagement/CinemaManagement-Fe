@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from "react";
-import html2canvas from "html2canvas";
 import {jsPDF} from "jspdf";
+import "jspdf-autotable";
 import {
   Users,
   Ticket,
@@ -132,37 +132,113 @@ const AdminDashboard = () => {
   const actualRevenue = realEarnings - extraExpenses - staffSalaries;
 
   const handleExportPDF = async () => {
-    if (!dashboardRef.current) return;
     try {
       setIsExporting(true);
-      toast.loading("Generating PDF report...", {id: "pdf-export"});
+      toast.loading("Generating professional report...", {id: "pdf-export"});
 
-      const canvas = await html2canvas(dashboardRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#0a0a0a",
-        windowWidth: 1400,
-        onclone: (clonedDoc) => {
-          const root = clonedDoc.documentElement;
-          // Replace modern oklch variables with standard hex for html2canvas compatibility
-          root.style.setProperty("--primary", "#c5a059");
-          root.style.setProperty("--secondary", "#8d2b2f");
-          root.style.setProperty("--background", "#0a0a0a");
-          root.style.setProperty("--card", "#121212");
-          root.style.setProperty("--muted-foreground", "#a3a3a3");
-          root.style.setProperty("--border", "rgba(255,255,255,0.1)");
+      const doc = new jsPDF() as any;
+      const today = new Date().toLocaleDateString();
+
+      // 1. Header & Title
+      doc.setFontSize(22);
+      doc.setTextColor(40);
+      doc.text("CINEMA MANAGEMENT REPORT", 105, 20, {align: "center"});
+
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${today}`, 105, 28, {align: "center"});
+      doc.text(
+        `Reporting Period: ${new Date(data.timeRange.start).toLocaleDateString()} - ${new Date(data.timeRange.end).toLocaleDateString()}`,
+        105,
+        34,
+        {align: "center"}
+      );
+
+      // 2. Financial Summary Table
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("1. Financial Summary", 14, 45);
+
+      const summaryData = [
+        ["Total Revenue", `$${data.totalRevenue.toLocaleString()}`],
+        ["Production Share (VPD)", `-$${data.productionShare.toLocaleString()}`],
+        ["Staff Salaries", `-$${staffSalaries.toLocaleString()}`],
+        ["Extra Expenses", `-$${extraExpenses.toLocaleString()}`],
+        ["Actual Net Revenue", `$${actualRevenue.toLocaleString()}`],
+      ];
+
+      doc.autoTable({
+        startY: 50,
+        head: [["Description", "Amount"]],
+        body: summaryData,
+        theme: "striped",
+        headStyles: {fillColor: [40, 40, 40]},
+        columnStyles: {
+          1: {halign: "right", fontStyle: "bold"},
         },
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      // 3. Revenue Breakdown Table
+      const finalY = (doc as any).lastAutoTable.finalY + 15;
+      doc.text("2. Revenue Breakdown", 14, finalY);
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Cinema_Report_${new Date().toISOString().split("T")[0]}.pdf`);
-      toast.success("PDF exported successfully!", {id: "pdf-export"});
+      const breakdownData = [
+        ["Ticket Sales", `$${data.ticketRevenue.toLocaleString()}`, `${ticketPercent}%`],
+        [
+          "Food & Drinks",
+          `$${data.foodRevenue.toLocaleString()}`,
+          `${100 - ticketPercent}%`,
+        ],
+      ];
+
+      doc.autoTable({
+        startY: finalY + 5,
+        head: [["Category", "Revenue", "Share"]],
+        body: breakdownData,
+        theme: "grid",
+        headStyles: {fillColor: [80, 80, 80]},
+        columnStyles: {
+          1: {halign: "right"},
+          2: {halign: "center"},
+        },
+      });
+
+      // 4. Recent Transactions Table
+      const transY = (doc as any).lastAutoTable.finalY + 15;
+      doc.text("3. Recent Transactions", 14, transY);
+
+      const transactionRows = recentTransactions.map((tx) => [
+        tx.id,
+        tx.user,
+        tx.movie,
+        tx.amount,
+        tx.status,
+        tx.date,
+      ]);
+
+      doc.autoTable({
+        startY: transY + 5,
+        head: [["ID", "Customer", "Movie", "Amount", "Status", "Date"]],
+        body: transactionRows,
+        styles: {fontSize: 8},
+        headStyles: {fillColor: [100, 100, 100]},
+      });
+
+      // 5. Footer
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(
+          `Page ${i} of ${pageCount} - Confidential Cinema Report`,
+          105,
+          doc.internal.pageSize.height - 10,
+          {align: "center"}
+        );
+      }
+
+      doc.save(`Cinema_Financial_Report_${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("Professional report generated!", {id: "pdf-export"});
     } catch (err: unknown) {
       console.error("PDF Export error:", err);
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -173,7 +249,11 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div ref={dashboardRef} id="dashboard-root" className="mx-auto max-w-7xl space-y-8 p-8 text-white">
+    <div
+      ref={dashboardRef}
+      id="dashboard-root"
+      className="mx-auto max-w-7xl space-y-8 p-8 text-white"
+    >
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tighter text-white uppercase">
@@ -187,7 +267,7 @@ const AdminDashboard = () => {
         <button
           onClick={handleExportPDF}
           disabled={isExporting}
-          className="bg-primary text-primary-foreground flex items-center gap-2 rounded-xl px-6 py-3 font-bold shadow-lg transition-all hover:shadow-primary/20 disabled:scale-95 disabled:opacity-50"
+          className="bg-primary text-primary-foreground hover:shadow-primary/20 flex items-center gap-2 rounded-xl px-6 py-3 font-bold shadow-lg transition-all disabled:scale-95 disabled:opacity-50"
         >
           {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Generate Report"}
         </button>
