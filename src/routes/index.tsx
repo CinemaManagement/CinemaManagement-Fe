@@ -17,6 +17,8 @@ import FoodSelection from "@/pages/booking/FoodSelection";
 import FoodMenu from "@/pages/food";
 import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
+import PaymentMethod from "@/pages/booking/PaymentMethod";
+import VnpayReturn from "@/pages/booking/VnpayReturn";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import FoodManagement from "@/pages/foods/FoodManagement";
 import ShowtimesPage from "@/pages/showtimes";
@@ -38,6 +40,8 @@ const Router = () => {
         <Route path={URL.MovieDetail} element={<MovieDetail />} />
         <Route path={URL.Booking} element={<SeatSelection />} />
         <Route path="/food-selection" element={<FoodSelection />} />
+        <Route path="/payment-method" element={<PaymentMethod />} />
+        <Route path="/vnpay-return" element={<VnpayReturn />} />
         <Route path={URL.Profile} element={<Profile />} />
         <Route path="/payment-success" element={<BookingSuccess />} />
         {/* Placeholder for other routes */}
