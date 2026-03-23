@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import {useEffect, useState} from "react";
+import {useSearchParams, useNavigate} from "react-router-dom";
+import {CheckCircle2, XCircle, Loader2} from "lucide-react";
 import toast from "react-hot-toast";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3800";
+const API_BASE = import.meta.env.VITE_APP_API || "http://localhost:3800";
 
 const VnpayReturn = () => {
   const [searchParams] = useSearchParams();
@@ -41,17 +41,17 @@ const VnpayReturn = () => {
   }, [searchParams]);
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center p-4 py-20 animate-in fade-in zoom-in duration-700">
-      <div className="max-w-lg w-full glass-card rounded-[3rem] overflow-hidden shadow-2xl shadow-inner-glossy p-12 md:p-20 flex flex-col items-center text-center">
+    <div className="animate-in fade-in zoom-in flex min-h-[80vh] items-center justify-center p-4 py-20 duration-700">
+      <div className="glass-card shadow-inner-glossy flex w-full max-w-lg flex-col items-center overflow-hidden rounded-[3rem] p-12 text-center shadow-2xl md:p-20">
         {status === "loading" && (
           <>
-            <div className="w-24 h-24 bg-primary/20 text-primary rounded-full flex items-center justify-center mb-8 shadow-inner-glossy">
-              <Loader2 className="w-12 h-12 animate-spin" />
+            <div className="bg-primary/20 text-primary shadow-inner-glossy mb-8 flex h-24 w-24 items-center justify-center rounded-full">
+              <Loader2 className="h-12 w-12 animate-spin" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-4">
+            <h1 className="mb-4 text-3xl font-black tracking-tighter text-white uppercase md:text-4xl">
               Verifying Payment
             </h1>
-            <p className="text-white/40 font-medium uppercase tracking-widest text-xs">
+            <p className="text-xs font-medium tracking-widest text-white/40 uppercase">
               Please wait while we confirm your transaction with VNPay...
             </p>
           </>
@@ -59,38 +59,38 @@ const VnpayReturn = () => {
 
         {status === "success" && (
           <>
-            <div className="w-24 h-24 bg-primary text-primary-foreground rounded-full flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(var(--primary),0.5)] btn-glossy animate-bounce">
-              <CheckCircle2 className="w-12 h-12" />
+            <div className="bg-primary text-primary-foreground btn-glossy mb-8 flex h-24 w-24 animate-bounce items-center justify-center rounded-full shadow-[0_0_50px_rgba(var(--primary),0.5)]">
+              <CheckCircle2 className="h-12 w-12" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-4">
+            <h1 className="mb-4 text-3xl font-black tracking-tighter text-white uppercase md:text-4xl">
               Payment <span className="text-gradient-gold">Confirmed!</span>
             </h1>
-            <p className="text-white/40 font-medium uppercase tracking-widest text-xs mb-10">
+            <p className="mb-10 text-xs font-medium tracking-widest text-white/40 uppercase">
               {message}
             </p>
             <button
               onClick={() => navigate(`/payment-success?bookingId=${bookingId}`)}
-              className="w-full py-5 bg-primary text-primary-foreground font-black rounded-2xl flex items-center justify-center gap-3 hover:scale-105 transition-all btn-glossy uppercase tracking-widest"
+              className="bg-primary text-primary-foreground btn-glossy flex w-full items-center justify-center gap-3 rounded-2xl py-5 font-black tracking-widest uppercase transition-all hover:scale-105"
             >
-              <CheckCircle2 className="w-5 h-5" /> View Your Ticket
+              <CheckCircle2 className="h-5 w-5" /> View Your Ticket
             </button>
           </>
         )}
 
         {status === "error" && (
           <>
-            <div className="w-24 h-24 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mb-8 shadow-inner-glossy">
-              <XCircle className="w-12 h-12" />
+            <div className="shadow-inner-glossy mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+              <XCircle className="h-12 w-12" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-4">
+            <h1 className="mb-4 text-3xl font-black tracking-tighter text-white uppercase md:text-4xl">
               Payment <span className="text-red-400">Failed</span>
             </h1>
-            <p className="text-white/40 font-medium uppercase tracking-widest text-xs mb-10">
+            <p className="mb-10 text-xs font-medium tracking-widest text-white/40 uppercase">
               {message}
             </p>
             <button
               onClick={() => navigate("/")}
-              className="w-full py-5 bg-white/5 border border-white/10 text-white font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-white/10 transition-all shadow-inner-glossy uppercase tracking-widest"
+              className="shadow-inner-glossy flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-5 font-black tracking-widest text-white uppercase transition-all hover:bg-white/10"
             >
               Return to Home
             </button>
