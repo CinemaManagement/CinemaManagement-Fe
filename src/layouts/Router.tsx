@@ -1,8 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
-import { Route, Routes } from "react-router-dom";
+import {Route, Routes} from "react-router-dom";
 
 import URL from "@/constants/url";
-import type { ItemRouteType } from "@/types/routes/router.type";
+import type {ItemRouteType} from "@/types/routes/router.type";
 import DefaultLayout from "./DefaultLayout";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 
@@ -21,8 +21,10 @@ import Profile from "@/pages/profile";
 import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import Showtimes from "@/pages/showtimes";
-import { UserRole } from "@/types/document";
+import {UserRole} from "@/types/document";
 import FoodManagement from "@/pages/foods/FoodManagement";
+import RoomManagement from "@/pages/rooms/RoomManagement";
+import RoomForm from "@/pages/rooms/RoomForm";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -36,7 +38,16 @@ export const menuRouterItems: ItemRouteType[] = [
     key: URL.Showtimes,
     components: <Showtimes />,
     layout: "default",
+    roles: [UserRole.CUSTOMER],
     title: "Showtimes",
+    isMenu: true,
+  },
+  {
+    key: URL.AdminRooms,
+    components: <RoomManagement />,
+    roles: [UserRole.MANAGER],
+    layout: "default",
+    title: "Rooms",
     isMenu: true,
   },
   {
@@ -66,21 +77,22 @@ export const menuRouterItems: ItemRouteType[] = [
 ];
 
 const publicRouterItems: ItemRouteType[] = [
-  { key: URL.Login, components: <Login />, layout: "" },
-  { key: URL.Register, components: <Register />, layout: "" },
-  { key: URL.ForgotPassword, components: <ForgotPassword />, layout: "" },
-  { key: URL.NotFound, components: <NotFound />, layout: "" },
-  { key: URL.Home, components: <Home />, layout: "default" },
+  {key: URL.Login, components: <Login />, layout: ""},
+  {key: URL.Register, components: <Register />, layout: ""},
+  {key: URL.ForgotPassword, components: <ForgotPassword />, layout: ""},
+  {key: URL.NotFound, components: <NotFound />, layout: ""},
+  {key: URL.Home, components: <Home />, layout: "default"},
 ];
 
 const detailRouterItems: ItemRouteType[] = [
-  { key: URL.MovieDetail, components: <MovieDetail />, layout: "default" },
-  { key: URL.MovieAdd, components: <MovieForm />, layout: "default" },
-  { key: URL.MovieEdit, components: <MovieForm />, layout: "default" },
-  { key: URL.Booking, components: <SeatSelection />, layout: "default" },
-  { key: URL.FoodSelection, components: <FoodSelection />, layout: "default" },
-  { key: URL.Profile, components: <Profile />, layout: "default" },
-  { key: URL.PaymentSuccess, components: <BookingSuccess />, layout: "default" },
+  {key: URL.MovieDetail, components: <MovieDetail />, layout: "default"},
+  {key: URL.MovieAdd, components: <MovieForm />, layout: "default"},
+  {key: URL.MovieEdit, components: <MovieForm />, layout: "default"},
+  {key: URL.Booking, components: <SeatSelection />, layout: "default"},
+  {key: URL.FoodSelection, components: <FoodSelection />, layout: "default"},
+  {key: URL.Profile, components: <Profile />, layout: "default"},
+  {key: URL.PaymentSuccess, components: <BookingSuccess />, layout: "default"},
+  {key: URL.AdminRoomAdd, components: <RoomForm />, layout: "default"},
 ];
 
 const allRouters = [...menuRouterItems, ...publicRouterItems, ...detailRouterItems];

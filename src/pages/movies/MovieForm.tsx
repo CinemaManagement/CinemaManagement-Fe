@@ -1,7 +1,7 @@
 import {useState, useEffect} from "react";
 import {useParams, useNavigate, Link} from "react-router-dom";
 import {movieApi} from "@/services/api/movieApi";
-import {MovieStatus} from "@/types/document";
+import {MovieStatus, ShowingStatus} from "@/types/document";
 import toast from "react-hot-toast";
 import {
   Save,
@@ -18,6 +18,7 @@ import {
   Users,
   UserCircle,
   Clapperboard,
+  Calendar,
 } from "lucide-react";
 
 const MOVIE_GENRES = [
@@ -85,6 +86,8 @@ export const MovieForm = () => {
     actors: [{name: "", avatar: ""}] as {name: string; avatar: string}[],
     revenueSharePercent: 0,
     status: MovieStatus.ACTIVE,
+    showingStatus: ShowingStatus.COMING_SOON,
+    releaseDate: "",
   });
 
   useEffect(() => {
@@ -114,6 +117,8 @@ export const MovieForm = () => {
             actors: mapToArrayOfObjects(data.actors),
             revenueSharePercent: data.revenueSharePercent || 0,
             status: data.status || MovieStatus.ACTIVE,
+            showingStatus: data.showingStatus || ShowingStatus.COMING_SOON,
+            releaseDate: data.releaseDate ? data.releaseDate.split("T")[0] : "",
           });
         } catch {
           toast.error("Failed to load movie details.");
@@ -238,6 +243,23 @@ export const MovieForm = () => {
                 )}
               </div>
 
+              {/* Showing Status */}
+              <div className="rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3">
+                <label className={labelCls}>Showing Status</label>
+                <select
+                  name="showingStatus"
+                  value={formData.showingStatus}
+                  onChange={handleChange}
+                  className="focus:border-primary focus:ring-primary block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:ring-1 focus:outline-none"
+                >
+                  {Object.values(ShowingStatus).map((s) => (
+                    <option key={s} value={s} className="bg-background text-white">
+                      {s.replace("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Status */}
               <div className="rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3">
                 <label className={labelCls}>Status</label>
@@ -328,6 +350,20 @@ export const MovieForm = () => {
                       onChange={handleChange}
                       className={inputCls}
                       placeholder="Enter movie title..."
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Release Date</label>
+                  <div className="group relative">
+                    <FieldIcon icon={Calendar} />
+                    <input
+                      type="date"
+                      name="releaseDate"
+                      value={formData.releaseDate}
+                      onChange={handleChange}
+                      className={inputCls}
                       required
                     />
                   </div>

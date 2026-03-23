@@ -1,10 +1,12 @@
 import {useState, useRef, useEffect} from "react";
 import {useParams, useNavigate} from "react-router-dom";
-import {ChevronLeft, Info, Armchair, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
+import {ChevronLeft, Info, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
 import type { Movie, Showtime } from "@/types/document";
 import { movieApi } from "@/services/api/movieApi";
 import { showtimeApi } from "@/services/api/showtimeApi";
+import { createMovieBooking } from "@/services/api/bookingApi";
+
 const SeatSelection = () => {
   const {showtimeId} = useParams();
   const navigate = useNavigate();
@@ -12,38 +14,38 @@ const SeatSelection = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const movieId = showtimeId?.split("-")[0];
   const [showtime, setShowtime] = useState<Showtime | null>(null);
-
-
+  const [isHolding, setIsHolding] = useState(false);
   
-  useEffect(() => {
-    if(movieId)
-      movieApi.getMovieById(movieId).then((res) => {
-        setMovie(res.data);
-      }).catch((err) => {
-        toast.error(err.response.data.message);
-      });
-  },[movieId])
+  // useEffect(() => {
+  //   if(movieId)
+  //     movieApi.getMovieById(movieId).then((res) => {
+  //       setMovie(res.data);
+  //     }).catch((err) => {
+  //       toast.error(err.response.data.message);
+  //     });
+  // },[movieId])
 
   useEffect(() => {
     if(showtimeId)
       showtimeApi.getShowtimeById(showtimeId).then((res) => {
         setShowtime(res.data);
+        setMovie(res.data.movieId);
       }).catch((err) => {
         toast.error(err.response.data.message);
       });
   },[showtimeId])
 
-  useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        const res = await movieApi.getMovieById(movieId as string);
-        setMovie(res.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    if (movieId) fetchMovie();
-  }, [movieId]);
+  // useEffect(() => {
+  //   const fetchMovie = async () => {
+  //     try {
+  //       const res = await movieApi.getMovieById(movieId as string);
+  //       setMovie(res.data);
+  //     } catch (error) {
+  //       console.log(error);
+  //     }
+  //   };
+  //   if (movieId) fetchMovie();
+  // }, [movieId]);
   // Zoom & Pan State
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({x: 0, y: 0});
@@ -81,19 +83,33 @@ const SeatSelection = () => {
     setScale(1);
     setPosition({x: 0, y: 0});
   };
-  const rows = ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-  const cols = Array.from({length: 12}, (_, i) => i + 1);
+  const allSeatCodes = showtime?.seats?.map((s) => s.seatCode) || [];
+  const rows = allSeatCodes.length > 0
+    ? Array.from(new Set(allSeatCodes.map((s) => s.charAt(0)))).sort()
+    : ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+  
+  const maxCol = allSeatCodes.length > 0
+    ? Math.max(...allSeatCodes.map((s) => parseInt(s.substring(1))))
+    : 8;
+  const cols = Array.from({length: maxCol}, (_, i) => i + 1);
 
-  const getSeatType = (row: string) => {
-    if (["A", "B", "C"].includes(row)) return "NORMAL";
-    if (["D", "E", "F", "G"].includes(row)) return "VIP";
-    return "COUPLE";
+  const getSeatType = (id: string) => {
+    if (!(showtime?.cinemaRoomId as any)?.seats) return "NONE";
+    const seatsLayout = (showtime?.cinemaRoomId as any).seats;
+    if (seatsLayout.COUPLE?.includes(id)) return "COUPLE";
+    if (seatsLayout.VIP?.includes(id)) return "VIP";
+    if (seatsLayout.NORMAL?.includes(id)) return "NORMAL";
+    return "NONE";
   };
 
-  const getSeatPrice = (type: string) => {
-    if (type === "NORMAL") return 12;
-    if (type === "VIP") return 18;
-    return 35; // For 2 people usually
+  const getSeatPrice = (id: string) => {
+    const seatObj = showtime?.seats?.find((s) => s.seatCode === id);
+    return seatObj?.price || 0;
+  };
+
+  const isSeatOccupied = (id: string) => {
+    const seatObj = showtime?.seats?.find((s) => s.seatCode === id);
+    return seatObj ? seatObj.status !== "AVAILABLE" : true;
   };
 
   const toggleSeat = (id: string) => {
@@ -109,9 +125,24 @@ const SeatSelection = () => {
   };
 
   const totalPrice = selectedSeats.reduce((sum, id) => {
-    const row = id.charAt(0);
-    return sum + getSeatPrice(getSeatType(row));
+    return sum + getSeatPrice(id);
   }, 0);
+
+  const handleContinue = async () => {
+    if (selectedSeats.length === 0) return;
+    setIsHolding(true);
+    try {
+      const res = await createMovieBooking(showtimeId as string, selectedSeats);
+      const movieBookingId = res._id || res.data?._id;
+      const expiredAt = res.expiredAt || res.data?.expiredAt;
+      toast.success("Thrones reserved! You have 10 minutes to grab snacks.");
+      navigate(`/food-selection?movieId=${movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}`);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to reserve seats");
+    } finally {
+      setIsHolding(false);
+    }
+  };
 
   return (
     <div className="animate-in fade-in mx-auto min-h-screen max-w-7xl px-4 pt-12 pb-32 duration-700 sm:px-6 lg:px-8">
@@ -128,8 +159,15 @@ const SeatSelection = () => {
               Choose Your Throne
             </h1>
             <p className="text-primary mt-1 flex items-center gap-2 text-sm font-bold tracking-widest uppercase">
-              {movie?.title} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" /> Today, 07:30
-              PM
+              {movie?.title} <span className="bg-primary/40 h-1.5 w-1.5 rounded-full" />{" "}
+              {showtime?.startTime
+                ? new Intl.DateTimeFormat("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date(showtime.startTime))
+                : "Loading time..."}
             </p>
           </div>
         </div>
@@ -176,7 +214,6 @@ const SeatSelection = () => {
                 </div>
 
                 <div className="relative flex flex-col items-center gap-6 pb-12 focus:outline-none">
-                  <div className="border-primary/50 pointer-events-none absolute top-[20%] left-1/2 z-0 h-[280px] w-[485px] -translate-x-1/2 rounded-xl border-2 border-dashed"></div>
 
                   {rows.map((row) => (
                     <div key={row} className="z-10 flex items-center gap-6">
@@ -186,23 +223,35 @@ const SeatSelection = () => {
                       <div className="flex gap-3">
                         {cols.map((col) => {
                           const id = `${row}${col}`;
-                          const type = getSeatType(row);
+                          const type = getSeatType(id);
+                          
+                          if (type === "NONE") {
+                            // If previous column was a COUPLE seat, we skip the empty space to keep the grid perfectly aligned.
+                            const prevId = `${row}${col - 1}`;
+                            if (getSeatType(prevId) === "COUPLE") return null;
+
+                            return <div key={id} className="w-10 sm:w-12 h-10 sm:h-12 border border-transparent shrink-0"></div>;
+                          }
+
                           const isSelected = selectedSeats.includes(id);
-                          const isOccupied = col === 5 && (row === "E" || row === "F");
+                          const isOccupied = isSeatOccupied(id);
+                          const price = getSeatPrice(id);
 
                           return (
                             <button
                               key={id}
                               disabled={isOccupied}
                               onClick={() => !hasMoved && toggleSeat(id)}
-                              className={`group/seat relative flex h-10 items-center justify-center rounded-[12px] transition-all md:h-12 ${type === "COUPLE" ? "w-24 md:w-28" : "w-10 md:w-12"} ${isOccupied ? "cursor-not-allowed bg-white/5 opacity-20" : ""} ${isSelected ? "bg-primary text-primary-foreground btn-glossy z-10 scale-105 shadow-[0_0_20px_rgba(var(--primary),0.6)]" : "bg-card/40 hover:border-primary/50 hover:bg-card/60 shadow-inner-glossy border border-white/10 text-white/40"} ${type === "VIP" && !isSelected && !isOccupied ? "border-primary/20 bg-primary/20 shadow-inner-primary" : ""} ${type === "COUPLE" && !isSelected && !isOccupied ? "bg-secondary/10 border-secondary/20" : ""} `}
+                              className={`group/seat shrink-0 relative flex h-10 items-center justify-center rounded-[12px] transition-all md:h-12 ${type === "COUPLE" ? "w-[92px] md:w-[108px]" : "w-10 md:w-12"} ${isOccupied ? "cursor-not-allowed bg-white/5 opacity-20" : ""} ${isSelected ? "bg-primary text-primary-foreground btn-glossy z-10 scale-105 shadow-[0_0_20px_rgba(var(--primary),0.6)]" : "bg-card/40 hover:border-primary/50 hover:bg-card/60 shadow-inner-glossy border border-white/10"} ${type === "VIP" && !isSelected && !isOccupied ? "border-primary/20 bg-primary/20 shadow-inner-primary" : ""} ${type === "COUPLE" && !isSelected && !isOccupied ? "bg-secondary/10 border-secondary/20" : ""} `}
                             >
-                              <Armchair
-                                className={`h-5 w-5 md:h-6 md:w-6 ${isSelected ? "fill-current" : ""}`}
-                              />
+                              <span
+                                className={`text-[10px] md:text-xs font-black tracking-normal transition-all ${isSelected ? "text-primary-foreground" : isOccupied ? "text-white/20" : type === "VIP" ? "text-primary/70 group-hover/seat:text-primary" : type === "COUPLE" ? "text-secondary/70 group-hover/seat:text-secondary" : "text-white/40 group-hover/seat:text-white/80"}`}
+                              >
+                                {id}
+                              </span>
                               {!isOccupied && (
                                 <div className="glass-card border-primary/20 pointer-events-none absolute -top-10 left-1/2 z-20 -translate-x-1/2 rounded-lg px-3 py-1.5 text-[9px] font-black tracking-widest whitespace-nowrap uppercase opacity-0 transition-all group-hover/seat:opacity-100">
-                                  {id} • {type} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(getSeatPrice(type))}
+                                  {id} • {type} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)}
                                 </div>
                               )}
                             </button>
@@ -279,7 +328,7 @@ const SeatSelection = () => {
 
         {/* Booking Summary Sidebar */}
         <div className="lg:col-span-1">
-          <div className="glass-card shadow-inner-glossy sticky top-24 flex flex-col gap-10 rounded-[3rem] p-10 shadow-2xl">
+          <div className="glass-card shadow-inner-glossy sticky top-24 flex max-h-[calc(100vh-6rem)] flex-col gap-10 overflow-y-auto rounded-[3rem] p-10 shadow-2xl [&::-webkit-scrollbar]:hidden">
             <div>
               <h2 className="mb-8 text-2xl font-black tracking-tighter text-white uppercase">
                 Booking Pass
@@ -299,13 +348,20 @@ const SeatSelection = () => {
                     <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
                       Cinema
                     </p>
-                    <p className="text-sm font-black text-white uppercase">Central Mall</p>
+                    <p className="text-sm font-black text-white uppercase">{(showtime?.cinemaRoomId as any)?.roomName || "Selected Room"}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
                       Time
                     </p>
-                    <p className="text-sm font-black text-white uppercase">07:30 PM</p>
+                    <p className="text-sm font-black text-white uppercase">
+                      {showtime?.startTime
+                        ? new Intl.DateTimeFormat("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(showtime.startTime))
+                        : "--:--"}
+                    </p>
                   </div>
                 </div>
 
@@ -313,7 +369,7 @@ const SeatSelection = () => {
                   <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
                     Selected Throne(s)
                   </p>
-                  <div className="flex min-h-16 flex-wrap gap-3">
+                  <div className="flex min-h-16 flex-wrap items-start gap-3">
                     {selectedSeats.length > 0 ? (
                       selectedSeats.map((id) => (
                         <span
@@ -341,19 +397,15 @@ const SeatSelection = () => {
                   </span>
                   <p className="text-4xl leading-none font-black text-white">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</p>
                 </div>
-                <div className="text-primary bg-primary/10 border-primary/20 shadow-inner-gold flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[10px] font-black uppercase">
-                  VND
-                </div>
+
               </div>
 
               <button
-                disabled={selectedSeats.length === 0}
-                onClick={() =>
-                  navigate(`/food-selection?movieId=${movieId}&seats=${selectedSeats.join(",")}`)
-                }
+                disabled={selectedSeats.length === 0 || isHolding}
+                onClick={handleContinue}
                 className="bg-primary flex items-center justify-between text-left text-primary-foreground btn-glossy w-full rounded-xl py-6 px-4 text-xs font-black tracking-widest uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
               >
-                Continue to Snacks <ChevronRight />
+                {isHolding ? "Holding Seats..." : "Continue to Snacks"} <ChevronRight />
               </button>
 
               <div className="shadow-inner-glossy flex items-start gap-4 rounded-[2rem] border border-white/5 bg-white/5 p-5">

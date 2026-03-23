@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Save, Monitor } from 'lucide-react';
-import { showtimeApi } from '@/services/api/showtimeApi';
-import { cinemaRoomApi } from '@/services/api/cinemaRoomApi';
-import type { CinemaRoom } from '@/types/document';
-import toast from 'react-hot-toast';
+import {useState, useEffect} from "react";
+import {X, Calendar, Clock, Save, Monitor} from "lucide-react";
+import {showtimeApi} from "@/services/api/showtimeApi";
+import {cinemaRoomApi} from "@/services/api/cinemaRoomApi";
+import {movieApi} from "@/services/api/movieApi";
+import type {CinemaRoom, Showtime} from "@/types/document";
+import toast from "react-hot-toast";
 
 interface AddShowtimeModalProps {
   movieId: string;
@@ -13,45 +14,123 @@ interface AddShowtimeModalProps {
   onSuccess?: () => void;
 }
 
-const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: AddShowtimeModalProps) => {
+const AddShowtimeModal = ({
+  movieId,
+  movieTitle,
+  isOpen,
+  onClose,
+  onSuccess,
+}: AddShowtimeModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [rooms, setRooms] = useState<CinemaRoom[]>([]);
   const [formData, setFormData] = useState({
-    date: '',
-    startTime: '',
-    endTime: '',
-    roomId: '',
+    date: "",
+    startTime: "",
+    roomId: "",
     priceNormal: 12,
     priceVip: 18,
     priceCouple: 35,
   });
+  const [movieDuration, setMovieDuration] = useState(120);
+  const [existingShowtimes, setExistingShowtimes] = useState<Showtime[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      const fetchRooms = async () => {
+      const initData = async () => {
         try {
-          const response = await cinemaRoomApi.getRooms();
-          const data = response.data?.data || response.data || [];
-          setRooms(data);
-          if (data.length > 0) {
-            setFormData(prev => ({ ...prev, roomId: data[0]._id }));
+          const roomsRes = await cinemaRoomApi.getRooms();
+          const roomsData = roomsRes.data?.data || roomsRes.data || [];
+          setRooms(roomsData);
+          if (roomsData.length > 0 && !formData.roomId) {
+            setFormData((prev) => ({...prev, roomId: roomsData[0]._id}));
           }
+
+          const movieRes = await movieApi.getMovieById(movieId);
+          const movieData = movieRes.data?.data || movieRes.data;
+          setMovieDuration(movieData.duration || 120);
         } catch {
-          toast.error('Failed to fetch rooms.');
+          toast.error("Failed to load initial data.");
         }
       };
-      fetchRooms();
+      initData();
     }
-  }, [isOpen]);
+  }, [isOpen, movieId, formData.roomId]);
+
+  useEffect(() => {
+    if (isOpen && formData.roomId && formData.date) {
+      const fetchRoomShowtimes = async () => {
+        try {
+          const res = await showtimeApi.getShowtimesByRoom(formData.roomId);
+          const all = (res.data?.data || res.data || []) as Showtime[];
+          // Filter for ACTIVE and same day
+          const filtered = all.filter((s) => {
+            const sameDay = s.startTime.startsWith(formData.date);
+            return s.status === "ACTIVE" && sameDay;
+          });
+          setExistingShowtimes(filtered);
+        } catch {
+          console.error("Failed to fetch room showtimes");
+        }
+      };
+      fetchRoomShowtimes();
+    }
+  }, [isOpen, formData.roomId, formData.date]);
 
   if (!isOpen) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+    const {name, value, type} = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'number' ? Number(value) : value,
+      [name]: type === "number" ? Number(value) : value,
     }));
+  };
+
+  const timeToMinutes = (time: string) => {
+    if (!time) return 0;
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
+  };
+
+  const minutesToTime = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+  };
+
+  const dayStart = 8 * 60; // 08:00
+  const dayEnd = 24 * 60; // 00:00
+  const totalMinutes = dayEnd - dayStart;
+
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    const clickedMinutes = Math.round((percentage * totalMinutes + dayStart) / 5) * 5; // Snap to 5 mins
+
+    setFormData((prev) => ({
+      ...prev,
+      startTime: minutesToTime(clickedMinutes),
+    }));
+  };
+
+  const calculateEndTime = () => {
+    if (!formData.startTime) return "";
+    const startMins = timeToMinutes(formData.startTime);
+    const endMins = startMins + movieDuration;
+    return minutesToTime(endMins);
+  };
+
+  const getPercentage = (timeStr: string) => {
+    const t = timeStr.includes("T") ? timeStr.split("T")[1].substring(0, 5) : timeStr;
+    const mins = timeToMinutes(t);
+    return ((mins - dayStart) / totalMinutes) * 100;
+  };
+
+  const getWidth = (start: string, end: string) => {
+    const s = timeToMinutes(start.includes("T") ? start.split("T")[1].substring(0, 5) : start);
+    const e = timeToMinutes(end.includes("T") ? end.split("T")[1].substring(0, 5) : end);
+    return ((e - s) / totalMinutes) * 100;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +139,7 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
 
     try {
       const startDateTime = new Date(`${formData.date}T${formData.startTime}`);
-      const endDateTime = new Date(`${formData.date}T${formData.endTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + movieDuration * 60000);
 
       const payload = {
         movieId,
@@ -72,54 +151,60 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
           VIP: formData.priceVip,
           COUPLE: formData.priceCouple,
         },
-        status: 'ACTIVE',
+        status: "ACTIVE",
       };
 
       await showtimeApi.createShowtime(payload);
-      toast.success('Showtime added successfully!');
+      toast.success("Showtime added successfully!");
       onSuccess?.();
       onClose();
     } catch {
-      toast.error('Failed to add showtime.');
+      toast.error("Failed to add showtime.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div 
-        className="glass-card w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 animate-in zoom-in-95 duration-300"
+    <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm duration-300">
+      <div
+        className="glass-card animate-in zoom-in-95 w-full max-w-lg overflow-hidden rounded-[2.5rem] border border-white/10 shadow-2xl duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative p-8 md:p-10">
-          <button 
+          <button
             onClick={onClose}
-            className="absolute top-6 right-6 p-2 text-white/40 hover:text-white transition-colors"
+            className="absolute top-6 right-6 p-2 text-white/40 transition-colors hover:text-white"
           >
-            <X className="w-6 h-6" />
+            <X className="h-6 w-6" />
           </button>
 
           <div className="mb-8">
-            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Add Showtime</h2>
-            <p className="text-primary text-xs font-bold tracking-widest uppercase mt-1">{movieTitle}</p>
+            <h2 className="text-3xl font-black tracking-tighter text-white uppercase">
+              Add Showtime
+            </h2>
+            <p className="text-primary mt-1 text-xs font-bold tracking-widest uppercase">
+              {movieTitle}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Date Selection */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Select Date</label>
+                <label className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">
+                  Select Date
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Calendar className="h-4 w-4 text-primary" />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Calendar className="text-primary h-4 w-4" />
                   </div>
                   <input
                     type="date"
                     name="date"
                     value={formData.date}
                     onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner-glossy"
+                    className="focus:border-primary focus:ring-primary shadow-inner-glossy w-full rounded-2xl border border-white/10 bg-white/5 py-3 pr-4 pl-11 text-sm text-white transition-all outline-none focus:ring-1"
                     required
                   />
                 </div>
@@ -127,16 +212,18 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
 
               {/* Room Selection */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Cinema Room</label>
+                <label className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">
+                  Cinema Room
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Monitor className="h-4 w-4 text-primary" />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Monitor className="text-primary h-4 w-4" />
                   </div>
                   <select
                     name="roomId"
                     value={formData.roomId}
                     onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner-glossy appearance-none"
+                    className="focus:border-primary focus:ring-primary shadow-inner-glossy w-full appearance-none rounded-2xl border border-white/10 bg-white/5 py-3 pr-4 pl-11 text-sm text-white transition-all outline-none focus:ring-1"
                     required
                   >
                     {rooms.map((room) => (
@@ -145,68 +232,134 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
                       </option>
                     ))}
                     {rooms.length === 0 && (
-                      <option value="" className="bg-background text-white">No rooms available</option>
+                      <option value="" className="bg-background text-white">
+                        No rooms available
+                      </option>
                     )}
                   </select>
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-white/40">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-white/40">
                     {/* Simple chevron icon could be added here */}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Start Time */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Start Time</label>
+                <label className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">
+                  Start Time
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Clock className="h-4 w-4 text-primary" />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                    <Clock className="text-primary h-4 w-4" />
                   </div>
                   <input
                     type="time"
                     name="startTime"
                     value={formData.startTime}
                     onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner-glossy"
+                    className="focus:border-primary focus:ring-primary shadow-inner-glossy w-full rounded-2xl border border-white/10 bg-white/5 py-3 pr-4 pl-11 text-sm text-white transition-all outline-none focus:ring-1"
                     required
                   />
                 </div>
               </div>
 
-              {/* End Time */}
+              {/* End Time (Display) */}
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">End Time</label>
+                <label className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">
+                  End Time (Auto)
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Clock className="h-4 w-4 text-primary" />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 opacity-50">
+                    <Clock className="h-4 w-4 text-white" />
                   </div>
                   <input
-                    type="time"
-                    name="endTime"
-                    value={formData.endTime}
-                    onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-inner-glossy"
-                    required
+                    type="text"
+                    value={calculateEndTime()}
+                    className="shadow-inner-glossy w-full cursor-not-allowed rounded-2xl border border-white/5 bg-white/[0.02] py-3 pr-4 pl-11 text-sm text-white/40 transition-all outline-none"
+                    readOnly
                   />
                 </div>
               </div>
             </div>
 
+            {/* Interactive Timeline */}
+            {formData.date && formData.roomId && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-[10px] font-black tracking-widest text-white/40 uppercase">
+                    Timeline Chart (Click to select time)
+                  </label>
+                </div>
+                
+                <div 
+                  className="relative h-12 w-full cursor-crosshair overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-inner"
+                  onClick={handleTimelineClick}
+                >
+                  {/* Grid hour markers */}
+                  {[8, 10, 12, 14, 16, 18, 20, 22].map((hour) => (
+                    <div 
+                      key={hour} 
+                      className="absolute top-0 bottom-0 border-l border-white/5"
+                      style={{ left: `${((hour * 60 - dayStart) / totalMinutes) * 100}%` }}
+                    >
+                      <span className="absolute -bottom-0.5 left-1 text-[8px] font-black text-white/20">{hour}h</span>
+                    </div>
+                  ))}
+
+                  {/* Already Scheduled sessions */}
+                  {existingShowtimes.map((s) => (
+                    <div
+                      key={s._id}
+                      className="absolute inset-y-2 rounded bg-white/10 border border-white/20 flex items-center justify-center"
+                      style={{
+                        left: `${getPercentage(s.startTime)}%`,
+                        width: `${getWidth(s.startTime, s.endTime)}%`
+                      }}
+                    >
+                      <span className="text-[8px] font-bold text-white/20 uppercase truncate px-1">Occupied</span>
+                    </div>
+                  ))}
+
+                  {/* Current selection preview */}
+                  {formData.startTime && (
+                    <div
+                      className="absolute inset-y-1 rounded-md border-2 border-primary bg-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all flex items-center justify-center"
+                      style={{
+                        left: `${getPercentage(formData.startTime)}%`,
+                        width: `${getWidth(formData.startTime, calculateEndTime())}%`
+                      }}
+                    >
+                      <span className="text-[9px] font-black text-primary uppercase">New Session</span>
+                    </div>
+                  )}
+                </div>
+                
+                <p className="ml-1 text-[9px] text-white/30 italic">
+                  * Duration: {movieDuration} minutes. Select Start Time by clicking on the chart.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-4">
-              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Pricing Rules (USD)</p>
-              
+              <p className="ml-1 text-[10px] font-black tracking-widest text-white/40 uppercase">
+                Pricing Rules (USD)
+              </p>
+
               <div className="grid grid-cols-3 gap-4">
                 {/* Normal Price */}
                 <div className="space-y-2">
-                  <label className="text-[9px] font-bold text-white/60 uppercase tracking-tighter ml-1 text-center block">Normal</label>
+                  <label className="ml-1 block text-center text-[9px] font-bold tracking-tighter text-white/60 uppercase">
+                    Normal
+                  </label>
                   <div className="relative">
                     <input
                       type="number"
                       name="priceNormal"
                       value={formData.priceNormal}
                       onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-sm text-white text-center focus:border-primary outline-none transition-all shadow-inner-glossy"
+                      className="focus:border-primary shadow-inner-glossy w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white transition-all outline-none"
                       required
                     />
                   </div>
@@ -214,14 +367,16 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
 
                 {/* VIP Price */}
                 <div className="space-y-2">
-                  <label className="text-[9px] font-bold text-white/60 uppercase tracking-tighter ml-1 text-center block">VIP</label>
+                  <label className="ml-1 block text-center text-[9px] font-bold tracking-tighter text-white/60 uppercase">
+                    VIP
+                  </label>
                   <div className="relative">
                     <input
                       type="number"
                       name="priceVip"
                       value={formData.priceVip}
                       onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-sm text-white text-center focus:border-primary outline-none transition-all shadow-inner-glossy"
+                      className="focus:border-primary shadow-inner-glossy w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white transition-all outline-none"
                       required
                     />
                   </div>
@@ -229,14 +384,16 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
 
                 {/* Couple Price */}
                 <div className="space-y-2">
-                  <label className="text-[9px] font-bold text-white/60 uppercase tracking-tighter ml-1 text-center block">Couple</label>
+                  <label className="ml-1 block text-center text-[9px] font-bold tracking-tighter text-white/60 uppercase">
+                    Couple
+                  </label>
                   <div className="relative">
                     <input
                       type="number"
                       name="priceCouple"
                       value={formData.priceCouple}
                       onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2 px-3 text-sm text-white text-center focus:border-primary outline-none transition-all shadow-inner-glossy"
+                      className="focus:border-primary shadow-inner-glossy w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center text-sm text-white transition-all outline-none"
                       required
                     />
                   </div>
@@ -248,13 +405,13 @@ const AddShowtimeModal = ({ movieId, movieTitle, isOpen, onClose, onSuccess }: A
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-primary text-primary-foreground font-black uppercase tracking-widest py-4 rounded-2xl shadow-[0_10px_30px_-5px_rgba(var(--primary),0.3)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-3 btn-glossy"
+                className="bg-primary text-primary-foreground btn-glossy flex w-full items-center justify-center gap-3 rounded-2xl py-4 font-black tracking-widest uppercase shadow-[0_10px_30px_-5px_rgba(var(--primary),0.3)] transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
               >
                 {isLoading ? (
-                  <div className="h-5 w-5 animate-spin border-2 border-primary-foreground border-t-transparent rounded-full" />
+                  <div className="border-primary-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
                 ) : (
                   <>
-                    <Save className="w-5 h-5" /> Save Showtime
+                    <Save className="h-5 w-5" /> Save Showtime
                   </>
                 )}
               </button>

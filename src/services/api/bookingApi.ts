@@ -26,7 +26,7 @@ export const confirmPayment = (id: string, data: PaymentData) => {
   return request({
     url: `/api/bookings/${id}/pay`,
     method: 'POST',
-    data: {id, data}
+    data
   }).then(res => res.data);
 };
 

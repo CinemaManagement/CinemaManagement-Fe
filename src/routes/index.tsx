@@ -1,9 +1,9 @@
-import { Route, Routes } from "react-router-dom";
+import {Route, Routes} from "react-router-dom";
 
 import URL from "@/constants/url";
 
 import ProtectedRoute from "@/routes/ProtectedRoute";
-import { MainLayout } from "@/layouts/MainLayout";
+import {MainLayout} from "@/layouts/MainLayout";
 
 import Login from "@/pages/login";
 import Register from "@/pages/register";
@@ -20,8 +20,14 @@ import BookingSuccess from "@/pages/booking/Success";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import FoodManagement from "@/pages/foods/FoodManagement";
 import ShowtimesPage from "@/pages/showtimes";
+import RoomManagement from "@/pages/rooms/RoomManagement";
+import RoomForm from "@/pages/rooms/RoomForm";
+import {UserRole} from "@/types/document";
+import {useAppSelector} from "@/store";
+import RoomDetail from "@/pages/rooms/RoomDetail";
 
 const Router = () => {
+  const {user} = useAppSelector((state) => state.auth);
   return (
     <Routes>
       <Route element={<MainLayout />}>
@@ -39,8 +45,20 @@ const Router = () => {
         <Route path="/movies/add" element={<MovieForm />} />
         <Route path="/movies/edit/:id" element={<MovieForm />} />
         <Route path={URL.Showtimes} element={<ShowtimesPage />} />
+        {user?.role === UserRole.CUSTOMER && (
+          <Route
+            path={URL.Showtimes}
+            element={<div className="p-20 text-center text-2xl">Showtimes coming soon...</div>}
+          />
+        )}
         <Route path={URL.Food} element={<FoodMenu />} />
         <Route path={URL.FoodManagement} element={<FoodManagement />} />
+
+        {/* Room Management */}
+        <Route path={URL.AdminRooms} element={<RoomManagement />} />
+        <Route path={URL.AdminRoomAdd} element={<RoomForm />} />
+        <Route path={URL.AdminRoomEdit} element={<RoomForm />} />
+        <Route path={URL.AdminRoomDetail} element={<RoomDetail />} />
       </Route>
 
       {/* Admin routes */}

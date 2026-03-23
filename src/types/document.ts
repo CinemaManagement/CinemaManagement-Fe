@@ -48,6 +48,7 @@ export interface Movie {
   actors: {name: string; avatar: string}[];
   rate: number;
   showingStatus: ShowingStatus;
+  releaseDate: string;
   revenueSharePercent: number;
 }
 
@@ -64,9 +65,10 @@ export const FoodStatus = {
 export type FoodStatus = (typeof FoodStatus)[keyof typeof FoodStatus];
 
 export interface FoodItem {
-  foodId: string;
+  foodId?: string;
   name: string;
   quantity: number;
+  imageUrl?: string;
 }
 
 export interface Food {
@@ -117,7 +119,11 @@ export interface CinemaRoom {
   _id: string;
   roomName: string;
   status: CinemaRoomStatus;
-  seats: Seat[];
+  seats: {
+    NORMAL: string[];
+    VIP: string[];
+    COUPLE: string[];
+  };
 }
 
 export const ShowtimeStatus = {
