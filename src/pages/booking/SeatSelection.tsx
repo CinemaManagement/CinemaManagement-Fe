@@ -2,10 +2,9 @@ import {useState, useRef, useEffect} from "react";
 import {useParams, useNavigate} from "react-router-dom";
 import {ChevronLeft, Info, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
-import type { Movie, Showtime } from "@/types/document";
-import { movieApi } from "@/services/api/movieApi";
-import { showtimeApi } from "@/services/api/showtimeApi";
-import { createMovieBooking } from "@/services/api/bookingApi";
+import type {Movie, Showtime} from "@/types/document";
+import {showtimeApi} from "@/services/api/showtimeApi";
+import {createMovieBooking} from "@/services/api/bookingApi";
 
 const SeatSelection = () => {
   const {showtimeId} = useParams();
@@ -15,7 +14,7 @@ const SeatSelection = () => {
   const movieId = showtimeId?.split("-")[0];
   const [showtime, setShowtime] = useState<Showtime | null>(null);
   const [isHolding, setIsHolding] = useState(false);
-  
+
   // useEffect(() => {
   //   if(movieId)
   //     movieApi.getMovieById(movieId).then((res) => {
@@ -26,14 +25,17 @@ const SeatSelection = () => {
   // },[movieId])
 
   useEffect(() => {
-    if(showtimeId)
-      showtimeApi.getShowtimeById(showtimeId).then((res) => {
-        setShowtime(res.data);
-        setMovie(res.data.movieId);
-      }).catch((err) => {
-        toast.error(err.response.data.message);
-      });
-  },[showtimeId])
+    if (showtimeId)
+      showtimeApi
+        .getShowtimeById(showtimeId)
+        .then((res) => {
+          setShowtime(res.data);
+          setMovie(res.data.movieId);
+        })
+        .catch((err) => {
+          toast.error(err.response.data.message);
+        });
+  }, [showtimeId]);
 
   // useEffect(() => {
   //   const fetchMovie = async () => {
@@ -84,13 +86,13 @@ const SeatSelection = () => {
     setPosition({x: 0, y: 0});
   };
   const allSeatCodes = showtime?.seats?.map((s) => s.seatCode) || [];
-  const rows = allSeatCodes.length > 0
-    ? Array.from(new Set(allSeatCodes.map((s) => s.charAt(0)))).sort()
-    : ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
-  
-  const maxCol = allSeatCodes.length > 0
-    ? Math.max(...allSeatCodes.map((s) => parseInt(s.substring(1))))
-    : 8;
+  const rows =
+    allSeatCodes.length > 0
+      ? Array.from(new Set(allSeatCodes.map((s) => s.charAt(0)))).sort()
+      : ["A", "B", "C", "D", "E", "F", "G", "H", "I"];
+
+  const maxCol =
+    allSeatCodes.length > 0 ? Math.max(...allSeatCodes.map((s) => parseInt(s.substring(1)))) : 8;
   const cols = Array.from({length: maxCol}, (_, i) => i + 1);
 
   const getSeatType = (id: string) => {
@@ -136,7 +138,9 @@ const SeatSelection = () => {
       const movieBookingId = res._id || res.data?._id;
       const expiredAt = res.expiredAt || res.data?.expiredAt;
       toast.success("Thrones reserved! You have 10 minutes to grab snacks.");
-      navigate(`/food-selection?movieId=${movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}`);
+      navigate(
+        `/food-selection?movieId=${movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}`,
+      );
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to reserve seats");
     } finally {
@@ -214,7 +218,6 @@ const SeatSelection = () => {
                 </div>
 
                 <div className="relative flex flex-col items-center gap-6 pb-12 focus:outline-none">
-
                   {rows.map((row) => (
                     <div key={row} className="z-10 flex items-center gap-6">
                       <span className="w-8 text-center text-[10px] font-black tracking-widest text-white/20 uppercase">
@@ -224,13 +227,18 @@ const SeatSelection = () => {
                         {cols.map((col) => {
                           const id = `${row}${col}`;
                           const type = getSeatType(id);
-                          
+
                           if (type === "NONE") {
                             // If previous column was a COUPLE seat, we skip the empty space to keep the grid perfectly aligned.
                             const prevId = `${row}${col - 1}`;
                             if (getSeatType(prevId) === "COUPLE") return null;
 
-                            return <div key={id} className="w-10 sm:w-12 h-10 sm:h-12 border border-transparent shrink-0"></div>;
+                            return (
+                              <div
+                                key={id}
+                                className="h-10 w-10 shrink-0 border border-transparent sm:h-12 sm:w-12"
+                              ></div>
+                            );
                           }
 
                           const isSelected = selectedSeats.includes(id);
@@ -242,16 +250,20 @@ const SeatSelection = () => {
                               key={id}
                               disabled={isOccupied}
                               onClick={() => !hasMoved && toggleSeat(id)}
-                              className={`group/seat shrink-0 relative flex h-10 items-center justify-center rounded-[12px] transition-all md:h-12 ${type === "COUPLE" ? "w-[92px] md:w-[108px]" : "w-10 md:w-12"} ${isOccupied ? "cursor-not-allowed bg-white/5 opacity-20" : ""} ${isSelected ? "bg-primary text-primary-foreground btn-glossy z-10 scale-105 shadow-[0_0_20px_rgba(var(--primary),0.6)]" : "bg-card/40 hover:border-primary/50 hover:bg-card/60 shadow-inner-glossy border border-white/10"} ${type === "VIP" && !isSelected && !isOccupied ? "border-primary/20 bg-primary/20 shadow-inner-primary" : ""} ${type === "COUPLE" && !isSelected && !isOccupied ? "bg-secondary/10 border-secondary/20" : ""} `}
+                              className={`group/seat relative flex h-10 shrink-0 items-center justify-center rounded-[12px] transition-all md:h-12 ${type === "COUPLE" ? "w-[92px] md:w-[108px]" : "w-10 md:w-12"} ${isOccupied ? "cursor-not-allowed bg-white/5 opacity-20" : ""} ${isSelected ? "bg-primary text-primary-foreground btn-glossy z-10 scale-105 shadow-[0_0_20px_rgba(var(--primary),0.6)]" : "bg-card/40 hover:border-primary/50 hover:bg-card/60 shadow-inner-glossy border border-white/10"} ${type === "VIP" && !isSelected && !isOccupied ? "border-primary/20 bg-primary/20 shadow-inner-primary" : ""} ${type === "COUPLE" && !isSelected && !isOccupied ? "bg-secondary/10 border-secondary/20" : ""} `}
                             >
                               <span
-                                className={`text-[10px] md:text-xs font-black tracking-normal transition-all ${isSelected ? "text-primary-foreground" : isOccupied ? "text-white/20" : type === "VIP" ? "text-primary/70 group-hover/seat:text-primary" : type === "COUPLE" ? "text-secondary/70 group-hover/seat:text-secondary" : "text-white/40 group-hover/seat:text-white/80"}`}
+                                className={`text-[10px] font-black tracking-normal transition-all md:text-xs ${isSelected ? "text-primary-foreground" : isOccupied ? "text-white/20" : type === "VIP" ? "text-primary/70 group-hover/seat:text-primary" : type === "COUPLE" ? "text-secondary/70 group-hover/seat:text-secondary" : "text-white/40 group-hover/seat:text-white/80"}`}
                               >
                                 {id}
                               </span>
                               {!isOccupied && (
                                 <div className="glass-card border-primary/20 pointer-events-none absolute -top-10 left-1/2 z-20 -translate-x-1/2 rounded-lg px-3 py-1.5 text-[9px] font-black tracking-widest whitespace-nowrap uppercase opacity-0 transition-all group-hover/seat:opacity-100">
-                                  {id} • {type} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)}
+                                  {id} • {type} •{" "}
+                                  {new Intl.NumberFormat("vi-VN", {
+                                    style: "currency",
+                                    currency: "VND",
+                                  }).format(price)}
                                 </div>
                               )}
                             </button>
@@ -348,7 +360,9 @@ const SeatSelection = () => {
                     <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
                       Cinema
                     </p>
-                    <p className="text-sm font-black text-white uppercase">{(showtime?.cinemaRoomId as any)?.roomName || "Selected Room"}</p>
+                    <p className="text-sm font-black text-white uppercase">
+                      {(showtime?.cinemaRoomId as any)?.roomName || "Selected Room"}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
@@ -395,15 +409,18 @@ const SeatSelection = () => {
                   <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">
                     Total Price
                   </span>
-                  <p className="text-4xl leading-none font-black text-white">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}</p>
+                  <p className="text-4xl leading-none font-black text-white">
+                    {new Intl.NumberFormat("vi-VN", {style: "currency", currency: "VND"}).format(
+                      totalPrice,
+                    )}
+                  </p>
                 </div>
-
               </div>
 
               <button
                 disabled={selectedSeats.length === 0 || isHolding}
                 onClick={handleContinue}
-                className="bg-primary flex items-center justify-between text-left text-primary-foreground btn-glossy w-full rounded-xl py-6 px-4 text-xs font-black tracking-widest uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
+                className="bg-primary text-primary-foreground btn-glossy flex w-full items-center justify-between rounded-xl px-4 py-6 text-left text-xs font-black tracking-widest uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-30 disabled:grayscale"
               >
                 {isHolding ? "Holding Seats..." : "Continue to Snacks"} <ChevronRight />
               </button>
