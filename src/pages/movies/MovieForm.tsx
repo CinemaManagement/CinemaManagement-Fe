@@ -178,6 +178,8 @@ export const MovieForm = () => {
         director: formData.director.filter((d) => d.name.trim() !== ""),
         actors: formData.actors.filter((a) => a.name.trim() !== ""),
       };
+      console.log(payload);
+
       if (isEditMode && id) {
         await movieApi.updateMovie(id, payload);
         toast.success("Movie updated successfully!");
@@ -241,23 +243,6 @@ export const MovieForm = () => {
                     <span className="text-xs font-medium">Poster Preview</span>
                   </div>
                 )}
-              </div>
-
-              {/* Showing Status */}
-              <div className="rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3">
-                <label className={labelCls}>Showing Status</label>
-                <select
-                  name="showingStatus"
-                  value={formData.showingStatus}
-                  onChange={handleChange}
-                  className="focus:border-primary focus:ring-primary block w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:ring-1 focus:outline-none"
-                >
-                  {Object.values(ShowingStatus).map((s) => (
-                    <option key={s} value={s} className="bg-background text-white">
-                      {s.replace("_", " ")}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Status */}

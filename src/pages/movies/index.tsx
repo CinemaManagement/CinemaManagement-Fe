@@ -243,12 +243,22 @@ const Movies = () => {
                       </div>
 
                       <div className="mt-8 flex items-center gap-4">
-                        <button
-                          onClick={() => navigate(URL.MovieDetail.replace(":id", movie._id))}
-                          className="cursor-pointer rounded-full bg-[#d4af37] px-10 py-3.5 text-sm font-black tracking-[0.2em] text-black uppercase shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-95"
-                        >
-                          Đặt vé ngay
-                        </button>
+                        {(() => {
+                          if (
+                            (!user?.role || user?.role === UserRole.CUSTOMER) &&
+                            movie.showingStatus === ShowingStatus.NOW_SHOWING &&
+                            movie.status === MovieStatus.ACTIVE
+                          ) {
+                            return (
+                              <button
+                                onClick={() => navigate(URL.MovieDetail.replace(":id", movie._id))}
+                                className="cursor-pointer rounded-full bg-[#d4af37] px-10 py-3.5 text-sm font-black tracking-[0.2em] text-black uppercase shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-95"
+                              >
+                                Đặt vé ngay
+                              </button>
+                            );
+                          }
+                        })()}
                         <div className="flex gap-2">
                           {canEditMovie && (
                             <button
