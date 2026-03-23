@@ -1,35 +1,41 @@
-import request from '../api';
+import request from "../api";
 
 export const movieApi = {
   getMovies: () => {
     return request({
-      url: '/api/movies',
-      method: 'GET',
+      url: "/api/movies",
+      method: "GET",
     });
   },
   getMoviesByManager: () => {
     return request({
-      url: '/api/movies/all',
-      method: 'GET',
+      url: "/api/movies/all",
+      method: "GET",
+    });
+  },
+  getMoviesByStatus: (status: string) => {
+    return request({
+      url: `/api/movie-status/${status}`,
+      method: "GET",
     });
   },
   createMovie: (data: Record<string, unknown>) => {
     return request({
-      url: '/api/movies',
-      method: 'POST',
+      url: "/api/movies",
+      method: "POST",
       data,
     });
   },
   getMovieById: (id: string) => {
     return request({
       url: `/api/movies/${id}`,
-      method: 'GET',
+      method: "GET",
     });
   },
   updateMovie: (id: string, data: Record<string, unknown>) => {
     return request({
       url: `/api/movies/${id}`,
-      method: 'PUT',
+      method: "PUT",
       data,
     });
   },
@@ -42,6 +48,19 @@ export const movieApi = {
   getShowtimesByMovieId: (movieId: string) => {
     return request({
       url: `/api/showtimes/movie/${movieId}`,
+      method: "GET",
+    });
+  },
+  rateMovie: (id: string, rate: number) => {
+    return request({
+      url: `/api/movies/${id}/rate`,
+      method: "POST",
+      data: {id, score: rate},
+    });
+  },
+  getUserRating: (id: string) => {
+    return request({
+      url: `/api/movies/${id}/rate`,
       method: "GET",
     });
   },

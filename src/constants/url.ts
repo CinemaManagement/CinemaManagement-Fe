@@ -30,6 +30,8 @@ const URL = {
   AdminRoomAdd: "/admin/rooms/add",
   AdminRoomEdit: "/admin/rooms/edit/:id",
   AdminRoomDetail: "/admin/rooms/:id",
+  AllBookings: "/cinema/bookings",
+  CheckIn: "/cinema/checkin/:id",
 };
 
 export default URL;

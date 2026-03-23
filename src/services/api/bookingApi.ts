@@ -73,3 +73,17 @@ export const cancelFoodBooking = (id: string) => {
     method: 'PATCH'
   }).then(res => res.data);
 };
+
+export const getAllBookingsHistory = () => {
+  return request({
+    url: '/api/bookings/all-history',
+    method: 'GET'
+  }).then(res => res.data);
+};
+
+export const getBookingById = (id: string) => {
+  return request({
+    url: `/api/bookings/${id}`,
+    method: 'GET'
+  }).then(res => res.data);
+};

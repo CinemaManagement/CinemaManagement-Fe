@@ -28,6 +28,8 @@ import RoomForm from "@/pages/rooms/RoomForm";
 import RoomDetail from "@/pages/rooms/RoomDetail";
 import PaymentMethod from "@/pages/booking/PaymentMethod";
 import VnpayReturn from "@/pages/booking/VnpayReturn";
+import AllBookings from "@/pages/cinema/AllBookings";
+import CheckInConfirm from "@/pages/cinema/CheckIn";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -41,7 +43,6 @@ export const menuRouterItems: ItemRouteType[] = [
     key: URL.Showtimes,
     components: <Showtimes />,
     layout: "default",
-    roles: [UserRole.CUSTOMER],
     title: "Showtimes",
     isMenu: true,
   },
@@ -67,6 +68,14 @@ export const menuRouterItems: ItemRouteType[] = [
     roles: [UserRole.MANAGER],
     layout: "default",
     title: "Food & Drinks",
+    isMenu: true,
+  },
+  {
+    key: URL.AllBookings,
+    components: <AllBookings />,
+    roles: [UserRole.CINEMA],
+    layout: "default",
+    title: "All Bookings",
     isMenu: true,
   },
   {
@@ -100,6 +109,7 @@ const detailRouterItems: ItemRouteType[] = [
   {key: URL.AdminRoomAdd, components: <RoomForm />, layout: "default"},
   {key: URL.AdminRoomEdit, components: <RoomForm />, layout: "default"},
   {key: URL.AdminRoomDetail, components: <RoomDetail />, layout: "default"},
+  {key: URL.CheckIn, components: <CheckInConfirm />, layout: "default"},
 ];
 
 const allRouters = [...menuRouterItems, ...publicRouterItems, ...detailRouterItems];
