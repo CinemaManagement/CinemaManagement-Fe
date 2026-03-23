@@ -138,9 +138,7 @@ const SeatSelection = () => {
       const movieBookingId = res._id || res.data?._id;
       const expiredAt = res.expiredAt || res.data?.expiredAt;
       toast.success("Thrones reserved! You have 10 minutes to grab snacks.");
-      navigate(
-        `/food-selection?movieId=${movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}`,
-      );
+      navigate(`/food-selection?movieId=${movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}&seats=${selectedSeats.join(",")}&ticketTotal=${totalPrice}`);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to reserve seats");
     } finally {
