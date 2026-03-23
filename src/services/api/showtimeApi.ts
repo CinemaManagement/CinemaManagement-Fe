@@ -20,6 +20,13 @@ export const showtimeApi = {
       method: "GET",
     });
   },
+
+  getShowtimeById(showtimeId: string) {
+    return request({
+      url: `/api/showtimes/${showtimeId}`,
+      method: "GET",
+    });
+  },
   getShowtimesByRoom: (roomId: string) => {
     return request({
       url: `/api/showtimes/room/${roomId}`,

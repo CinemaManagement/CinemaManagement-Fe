@@ -1,11 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useState, useEffect} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
-import {ChevronLeft, Plus, Minus, ShoppingBag, Info, Ticket, Loader2} from "lucide-react";
+import {
+  ChevronLeft,
+  Plus,
+  Minus,
+  ShoppingBag,
+  Info,
+  Loader2,
+  ShoppingCart,
+  Clock,
+} from "lucide-react";
 import {movieApi} from "@/services/api/movieApi";
-import {createFoodBooking, createMovieBooking} from "@/services/api/bookingApi";
+import {createFoodBooking, addFoodToBooking, confirmPayment, cancelBooking} from "@/services/api/bookingApi";
 import toast from "react-hot-toast";
 import {foodApi} from "@/services/api/foodApi";
+import {cartApi} from "@/services/api/cartApi";
 
 const formatVND = (amount: number) =>
   new Intl.NumberFormat("vi-VN", {style: "currency", currency: "VND"}).format(amount);
@@ -14,7 +24,8 @@ const FoodSelection = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const movieId = searchParams.get("movieId");
-  const showtimeId = searchParams.get("showtimeId");
+  const movieBookingId = searchParams.get("movieBookingId");
+  const expiredAtParam = searchParams.get("expiredAt");
   const seats = searchParams.get("seats")?.split(",") || [];
 
   const [movie, setMovie] = useState<any>({});
@@ -22,6 +33,31 @@ const FoodSelection = () => {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  const [userCart, setUserCart] = useState<any>(null);
+  const [cartAdded, setCartAdded] = useState(false);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!expiredAtParam) return;
+    const expiredAt = new Date(decodeURIComponent(expiredAtParam)).getTime();
+
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((expiredAt - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        toast.error("Session expired! Your held seats have been released.");
+        navigate(-1);
+      }
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [expiredAtParam, navigate]);
+  
 
   useEffect(() => {
     // Fetch food menu from backend
@@ -38,6 +74,10 @@ const FoodSelection = () => {
       })
       .finally(() => setLoading(false));
 
+    cartApi.getCart().then((res: any) => {
+      const data = res.data?.data ?? res.data;
+      setUserCart(data);
+    });
     if (movieId) {
       movieApi
         .getMovieById(movieId)
@@ -60,11 +100,45 @@ const FoodSelection = () => {
       return acc + item.price * (cart[id] || 0);
     }, 0);
 
-  const handleCheckout = async () => {
-    if (!showtimeId || seats.length === 0) {
-      toast.error("Missing booking details!");
+  const handleAddFromCart = () => {
+    // The cart can be { items: [...] } or just an array depending on backend serialization
+    const itemsArray = Array.isArray(userCart?.items)
+      ? userCart.items
+      : Array.isArray(userCart)
+        ? userCart
+        : [];
+
+    if (itemsArray.length === 0) {
+      toast.error("Your card is empty!");
       return;
     }
+
+    setCart((prev) => {
+      const newCart = {...prev};
+      itemsArray.forEach((item: any) => {
+        // Handle variations where foodId might be populated or an object
+        const id = item.foodId?._id || item.foodId?.id || item.foodId || item._id || item.id;
+        const qty = item.quantity || 1;
+
+        if (id) {
+          newCart[id] = (newCart[id] || 0) + qty;
+        }
+      });
+      return newCart;
+    });
+
+    setCartAdded(true);
+    toast.success("Added food from your card!");
+
+
+  };
+
+  const handleCheckout = async () => {
+    if (!movieBookingId) {
+      toast.error("Missing booking record. Please restart your booking.");
+      return;
+    }
+    
     setSubmitting(true);
     try {
       let foodBookingId: string | undefined;
@@ -73,19 +147,25 @@ const FoodSelection = () => {
         .filter(([, qty]) => qty > 0)
         .map(([foodId, quantity]) => ({foodId, quantity}));
 
+      // 1. Process food order and attach to the initial Held reservation
       if (cartItems.length > 0) {
         const foodRes = await createFoodBooking(cartItems);
-        foodBookingId = foodRes._id ?? foodRes.data?._id;
+        foodBookingId = foodRes._id || foodRes.data?._id;
+        
+        if (foodBookingId) {
+          await addFoodToBooking(movieBookingId, foodBookingId);
+        }
+        await cartApi.clearCart();
       }
 
-      const movieRes = await createMovieBooking(showtimeId, seats, foodBookingId);
-      const bookingId = movieRes._id ?? movieRes.data?._id;
+      // 2. Mock transaction details to finish checkout process
+      await confirmPayment(movieBookingId, { method: "ONLINE", transactionId: `TRX_${Date.now()}` });
 
-      toast.success("Booking placed successfully!");
-      navigate(`/payment-success?bookingId=${bookingId}`);
+      toast.success("Payment confirmed! See your ticket details.");
+      navigate(`/payment-success?bookingId=${movieBookingId}`);
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.response?.data?.message ?? "Something went wrong.");
+      toast.error(error?.response?.data?.message || "Something went wrong processing payment.");
     } finally {
       setSubmitting(false);
     }
@@ -109,7 +189,18 @@ const FoodSelection = () => {
       <div className="mb-16 flex flex-col justify-between gap-8 md:flex-row md:items-center">
         <div className="flex items-center gap-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={async () => {
+              if (movieBookingId) {
+                toast.loading("Releasing held seats...", { id: "release" });
+                try {
+                  await cancelBooking(movieBookingId);
+                  toast.success("Seats released.", { id: "release" });
+                } catch (e) {
+                  toast.dismiss("release");
+                }
+              }
+              navigate(-1);
+            }}
             className="glass-card hover:text-primary shadow-inner-glossy rounded-2xl p-4 text-white/40 transition-all hover:scale-110 active:scale-95"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -125,6 +216,16 @@ const FoodSelection = () => {
           </div>
         </div>
         <div className="shadow-inner-glossy flex items-center gap-4 rounded-2xl border border-white/5 bg-white/5 p-2">
+          {timeLeft !== null && (
+            <div className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-black whitespace-nowrap transition-colors ${
+              timeLeft <= 120
+                ? "bg-red-500/20 text-red-400 animate-pulse"
+                : "bg-primary/10 text-primary"
+            }`}>
+              <Clock className="h-4 w-4" />
+              <span>{`${Math.floor(timeLeft / 60).toString().padStart(2, "0")}:${(timeLeft % 60).toString().padStart(2, "0")}`}</span>
+            </div>
+          )}
           <div className="bg-primary text-primary-foreground flex items-center gap-2 rounded-xl px-4 py-2 shadow-lg">
             <ShoppingBag className="h-4 w-4" />
             <span className="text-sm font-black whitespace-nowrap">STEP 03/04</span>
@@ -278,18 +379,22 @@ const FoodSelection = () => {
                 <button
                   onClick={handleCheckout}
                   disabled={submitting}
-                  className="btn-glossy bg-primary text-primary-foreground flex w-full items-center justify-center gap-3 rounded-3xl py-6 text-sm font-black tracking-[0.2em] uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                  className="btn-glossy bg-primary text-primary-foreground flex w-full items-center justify-center gap-3 rounded-3xl py-6 text-sm font-black tracking-[0.2em] uppercase shadow-[0_20px_40px_-10px_rgba(var(--primary),0.4)] transition-all hover:scale-[1.02] hover:shadow-[0_20px_60px_-10px_rgba(var(--primary),0.6)] hover:brightness-110 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
                 >
                   {submitting && <Loader2 className="h-5 w-5 animate-spin" />}
                   {submitting ? "Processing..." : "Make Payment"}
                 </button>
 
-                <div className="shadow-inner-glossy flex items-center justify-center gap-3 rounded-2xl border border-white/5 bg-white/5 py-4">
-                  <Ticket className="text-primary h-5 w-5 opacity-50" />
-                  <span className="text-[10px] font-black tracking-widest text-white/30 uppercase">
-                    Secure Checkout
+                <button
+                  onClick={handleAddFromCart}
+                  disabled={cartAdded || submitting}
+                  className="group shadow-inner-glossy flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-white/5 bg-white/5 py-4 transition-all duration-300 hover:scale-[1.02] hover:border-white/10 hover:bg-white/10 hover:shadow-lg hover:shadow-white/5 active:scale-95 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <ShoppingCart className="text-primary h-5 w-5 opacity-50 transition-all duration-300 group-hover:scale-110 group-hover:-rotate-6 group-hover:opacity-100" />
+                  <span className="text-[10px] font-black tracking-widest text-white/30 uppercase transition-all duration-300 group-hover:text-white/90">
+                    {cartAdded ? "Added From Card" : "Add From Card"}
                   </span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
