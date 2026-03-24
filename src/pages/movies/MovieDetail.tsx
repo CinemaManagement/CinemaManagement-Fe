@@ -1,13 +1,27 @@
 import {useParams, useNavigate} from "react-router-dom";
-import {Star, Clock, Calendar, Ticket, ChevronRight, MapPin, Info, Plus} from "lucide-react";
-import {useState, useEffect} from "react";
+import {useCallback, useState, useEffect} from "react";
+import {
+  Star,
+  Clock,
+  Calendar,
+  Ticket,
+  ChevronRight,
+  MapPin,
+  Info,
+  Plus,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import {movieApi} from "@/services/api/movieApi";
+import {showtimeApi} from "@/services/api/showtimeApi";
 import {useAppSelector} from "@/store";
-import {UserRole} from "@/types/document";
+import {ShowingStatus, UserRole} from "@/types/document";
 import AddShowtimeModal from "./components/AddShowtimeModal";
+import EditShowtimeModal from "./components/EditShowtimeModal";
 import toast from "react-hot-toast";
-import type {Movie} from "@/types/document";
+import type {Movie, Showtime as GlobalShowtime} from "@/types/document";
 import dayjs from "dayjs";
+import {formatTime} from "@/lib/utils";
 
 interface PersonItem {
   name: string;
@@ -15,22 +29,7 @@ interface PersonItem {
   _id?: string;
 }
 
-interface Showtime {
-  _id: string;
-  movieId: string;
-  startTime: string;
-  status: string;
-  pricingRule: {
-    NORMAL: number;
-    VIP: number;
-    COUPLE: number;
-  };
-  cinemaRoomId: {
-    _id: string;
-    roomName: string;
-    status: string;
-  };
-}
+type Showtime = any; // Use any for local populated showtime to avoid complex type conversion
 
 interface ExtendedMovie extends Omit<Partial<Movie>, "director" | "actors"> {
   id?: string;
@@ -51,6 +50,8 @@ const MovieDetail = () => {
   const [showtimesData, setShowtimesData] = useState<Showtime[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedShowtime, setSelectedShowtime] = useState<Showtime | null>(null);
   const {user} = useAppSelector((state) => state.auth);
   const isManager = user?.role === UserRole.MANAGER;
   const [rating, setRating] = useState(0);
@@ -71,37 +72,56 @@ const MovieDetail = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        if (!id) return;
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      if (!id) return;
 
-        const [movieRes, showtimesRes, ratingRes] = await Promise.all([
-          movieApi.getMovieById(id),
-          movieApi.getShowtimesByMovieId(id),
-          movieApi.getUserRating(id).catch(() => null),
-        ]);
+      const [movieRes, showtimesRes, ratingRes] = await Promise.all([
+        movieApi.getMovieById(id),
+        movieApi.getShowtimesByMovieId(id),
+        movieApi.getUserRating(id).catch(() => null),
+      ]);
 
-        const mData = movieRes.data?.data || movieRes.data;
-        const sData = showtimesRes.data?.data || showtimesRes.data;
-        const rData = ratingRes?.data?.data || ratingRes?.data;
+      const mData = movieRes.data?.data || movieRes.data;
+      const sData = showtimesRes.data?.data || showtimesRes.data;
+      const rData = ratingRes?.data?.data || ratingRes?.data;
 
-        setMovie(mData);
-        setShowtimesData(sData || []);
-        if (rData && rData.score) {
-          setRating(rData.score);
-        }
-      } catch {
-        console.error("Error fetching movie data:");
-        toast.error("Failed to fetch movie details.");
-        navigate("/movies");
-      } finally {
-        setIsLoading(false);
+      setMovie(mData);
+      setShowtimesData(sData || []);
+      if (rData && rData.score) {
+        setRating(rData.score);
       }
-    };
-    fetchData();
+    } catch {
+      console.error("Error fetching movie data:");
+      toast.error("Failed to fetch movie details.");
+      navigate("/movies");
+    } finally {
+      setIsLoading(false);
+    }
   }, [id, navigate]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleDeleteShowtime = async (e: React.MouseEvent, showtimeId: string) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this showtime?")) return;
+    try {
+      await showtimeApi.deleteShowtime(showtimeId);
+      toast.success("Showtime deleted successfully!");
+      fetchData();
+    } catch {
+      toast.error("Failed to delete showtime.");
+    }
+  };
+
+  const handleEditShowtime = (e: React.MouseEvent, showtime: Showtime) => {
+    e.stopPropagation();
+    setSelectedShowtime(showtime);
+    setIsEditModalOpen(true);
+  };
 
   const availableDates = Array.from(
     new Set(showtimesData.map((s) => new Date(s.startTime).toDateString())),
@@ -159,8 +179,8 @@ const MovieDetail = () => {
             <div className="relative aspect-2/3 w-72 shrink-0 -translate-y-12 -rotate-1 transform overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] md:block">
               <img src={movie.posterUrl} alt={movie.title} className="h-full w-full object-cover" />
               <span className="bg-secondary absolute top-4 left-4 rounded-md px-3 py-1 text-xs text-white">
-                  {movie.ageRestriction}+
-                </span>
+                {movie.ageRestriction}+
+              </span>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-8 flex flex-col gap-6 duration-700">
@@ -188,9 +208,9 @@ const MovieDetail = () => {
                   <Clock className="text-primary h-4 w-4" /> {movie.duration} minutes
                 </span>
                 <span className="flex items-center gap-2">
-                  <Calendar className="text-primary h-4 w-4" /> {dayjs(movie.releaseDate).format("DD/MM/YYYY")}
+                  <Calendar className="text-primary h-4 w-4" />{" "}
+                  {dayjs(movie.releaseDate).format("DD/MM/YYYY")}
                 </span>
-                
               </div>
             </div>
           </div>
@@ -322,13 +342,14 @@ const MovieDetail = () => {
           </div>
 
           {/* Right Column: Showtime Selection */}
-          <div className="relative lg:col-span-2 space-y-8">
+          <div className="relative space-y-8 lg:col-span-2">
             <div className="glass-card shadow-inner-glossy sticky top-24 rounded-[3rem] p-10 shadow-2xl">
               <div className="mb-8 flex items-center justify-between">
                 <h2 className="flex items-center gap-4 text-2xl font-black tracking-tighter text-white uppercase">
-                  <Ticket className="text-primary h-7 w-7" /> Plan Your Visit
+                  <Ticket className="text-primary h-7 w-7" />{" "}
+                  {isManager ? "Showtimes" : "Plan Your Visit"}
                 </h2>
-                {isManager && (
+                {isManager && movie.showingStatus === ShowingStatus.NOW_SHOWING && (
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="bg-primary/10 border-primary/20 text-primary hover:bg-primary hover:text-primary-foreground shadow-inner-gold group rounded-2xl border p-3 transition-all"
@@ -354,15 +375,15 @@ const MovieDetail = () => {
                       : "No Date Selected"}
                   </span>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
+                <div className="no-scrollbar flex snap-x gap-4 overflow-x-auto pb-6">
                   {availableDates.map((d, i) => (
                     <button
                       key={i}
                       onClick={() => setSelectedDateIndex(i)}
-                      className={`flex min-w-[75px] transform flex-col items-center py-4 transition-all active:scale-95 snap-center ${
+                      className={`flex min-w-[75px] transform snap-center flex-col items-center py-4 transition-all active:scale-95 ${
                         selectedDateIndex === i
-                          ? "bg-[#d4af37] text-black border-[#d4af37] btn-glossy z-10 scale-105 shadow-[0_0_25px_rgba(212,175,55,0.4)] rounded-2xl rounded-tr-sm rounded-bl-sm"
-                          : "shadow-inner-glossy border-white/10 bg-white/5 text-white/60 hover:bg-white/10 rounded-2xl"
+                          ? "btn-glossy z-10 scale-105 rounded-2xl rounded-tr-sm rounded-bl-sm border-[#d4af37] bg-[#d4af37] text-black shadow-[0_0_25px_rgba(212,175,55,0.4)]"
+                          : "shadow-inner-glossy rounded-2xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
                       }`}
                     >
                       <span className="mb-1 text-[10px] font-black tracking-widest uppercase opacity-60">
@@ -391,32 +412,49 @@ const MovieDetail = () => {
                 <div className="space-y-4">
                   {filteredShowtimes.length > 0 ? (
                     filteredShowtimes.map((s) => (
-                      <button
+                      <div
                         key={s._id}
                         onClick={() => navigate(`/booking/${s._id}`)}
-                        className="group hover:border-primary/50 shadow-inner-glossy flex w-full transform items-center justify-between rounded-3xl border border-white/5 bg-white/5 p-6 transition-all hover:-translate-x-1"
+                        className="group hover:border-primary/50 shadow-inner-glossy flex w-full transform cursor-pointer items-center justify-between rounded-3xl border border-white/5 bg-white/5 p-6 transition-all hover:-translate-x-1"
                       >
                         <div className="flex items-center gap-5">
                           <span className="group-hover:text-primary text-2xl font-black text-white transition-colors">
-                            {new Date(s.startTime).toLocaleTimeString("en-US", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            })}
+                            {formatTime(s.startTime)}
                           </span>
                           <span className="group-hover:text-primary/60 group-hover:border-primary/20 rounded border border-white/5 bg-white/5 px-2.5 py-1 text-[9px] font-black text-white/40 uppercase transition-all">
                             {getRoomType(s.cinemaRoomId?.roomName)}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-primary text-lg font-black drop-shadow-[0_0_10px_rgba(var(--primary),0.3)]">
-                            {s.pricingRule.NORMAL.toLocaleString("vi-VN")}đ
-                          </span>
-                          <div className="group-hover:bg-primary group-hover:text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full bg-white/5 transition-all">
-                            <ChevronRight className="h-5 w-5" />
+                          <div className="flex items-center gap-4">
+                            <span className="text-primary text-lg font-black drop-shadow-[0_0_10px_rgba(var(--primary),0.3)]">
+                              {s.pricingRule.NORMAL.toLocaleString("vi-VN")}đ
+                            </span>
+                            {isManager ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={(e) => handleEditShowtime(e, s)}
+                                  className="hover:bg-primary hover:text-primary-foreground rounded-full bg-white/5 p-2.5 transition-all"
+                                  title="Edit"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => handleDeleteShowtime(e, s._id)}
+                                  className="rounded-full bg-white/5 p-2.5 transition-all hover:bg-red-500 hover:text-white"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="group-hover:bg-primary group-hover:text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full bg-white/5 transition-all">
+                                <ChevronRight className="h-5 w-5" />
+                              </div>
+                            )}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     ))
                   ) : (
                     <div className="py-10 text-center">
@@ -442,7 +480,7 @@ const MovieDetail = () => {
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between">
                   <h2 className="flex items-center gap-3 text-xl font-black tracking-tighter text-white uppercase">
-                    <Star className="text-primary h-6 w-6 fill-primary" /> Rated by you
+                    <Star className="text-primary fill-primary h-6 w-6" /> Rated by you
                   </h2>
                   {rating > 0 && (
                     <span className="text-primary text-[10px] font-black tracking-widest uppercase">
@@ -471,7 +509,7 @@ const MovieDetail = () => {
                         <Star
                           className={`h-6 w-6 transition-all ${
                             star <= (hover || rating)
-                              ? "text-[#d4af37] fill-[#d4af37] drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]"
+                              ? "fill-[#d4af37] text-[#d4af37] drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]"
                               : "text-white/20"
                           }`}
                         />
@@ -490,7 +528,21 @@ const MovieDetail = () => {
         onClose={() => setIsModalOpen(false)}
         movieId={id || ""}
         movieTitle={movie.title || ""}
+        onSuccess={fetchData}
       />
+
+      {selectedShowtime && (
+        <EditShowtimeModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedShowtime(null);
+          }}
+          showtime={selectedShowtime as unknown as GlobalShowtime}
+          movieTitle={movie.title || ""}
+          onSuccess={fetchData}
+        />
+      )}
     </>
   );
 };

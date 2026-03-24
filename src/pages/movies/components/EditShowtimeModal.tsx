@@ -7,45 +7,57 @@ import type {CinemaRoom, Showtime} from "@/types/document";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 
-interface AddShowtimeModalProps {
-  movieId: string;
+interface EditShowtimeModalProps {
+  showtime: Showtime;
   movieTitle: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-const AddShowtimeModal = ({
-  movieId,
+const EditShowtimeModal = ({
+  showtime,
   movieTitle,
   isOpen,
   onClose,
   onSuccess,
-}: AddShowtimeModalProps) => {
+}: EditShowtimeModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [rooms, setRooms] = useState<CinemaRoom[]>([]);
   const [formData, setFormData] = useState({
     date: "",
     startTime: "",
     roomId: "",
-    priceNormal: 12,
-    priceVip: 18,
-    priceCouple: 35,
+    priceNormal: 0,
+    priceVip: 0,
+    priceCouple: 0,
   });
   const [movieDuration, setMovieDuration] = useState(120);
   const [existingShowtimes, setExistingShowtimes] = useState<Showtime[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && showtime) {
+      const startDate = dayjs(showtime.startTime);
+      setFormData({
+        date: startDate.format("YYYY-MM-DD"),
+        startTime: startDate.format("HH:mm"),
+        roomId:
+          typeof showtime.cinemaRoomId === "string"
+            ? showtime.cinemaRoomId
+            : showtime.cinemaRoomId._id,
+        priceNormal: showtime.pricingRule.NORMAL,
+        priceVip: showtime.pricingRule.VIP,
+        priceCouple: showtime.pricingRule.COUPLE,
+      });
+
       const initData = async () => {
         try {
           const roomsRes = await cinemaRoomApi.getRooms();
           const roomsData = roomsRes.data?.data || roomsRes.data || [];
           setRooms(roomsData);
-          if (roomsData.length > 0 && !formData.roomId) {
-            setFormData((prev) => ({...prev, roomId: roomsData[0]._id}));
-          }
 
+          const movieId =
+            typeof showtime.movieId === "string" ? showtime.movieId : showtime.movieId._id;
           const movieRes = await movieApi.getMovieById(movieId);
           const movieData = movieRes.data?.data || movieRes.data;
           setMovieDuration(movieData.duration || 120);
@@ -55,7 +67,7 @@ const AddShowtimeModal = ({
       };
       initData();
     }
-  }, [isOpen, movieId, formData.roomId]);
+  }, [isOpen, showtime]);
 
   useEffect(() => {
     if (isOpen && formData.roomId && formData.date) {
@@ -63,13 +75,11 @@ const AddShowtimeModal = ({
         try {
           const res = await showtimeApi.getShowtimesByRoom(formData.roomId);
           const all = (res.data?.data || res.data || []) as Showtime[];
-          // Filter for ACTIVE and same day
-          const filtered = all
-            .filter((s) => {
-              const sameDay = s.startTime.startsWith(formData.date);
-              return s.status === "ACTIVE" && sameDay;
-            })
-            .map((item) => ({...item, startTime: dayjs(item.startTime).format("HH:mm")}));
+          // Filter for ACTIVE and same day, exclude current showtime
+          const filtered = all.filter((s) => {
+            const sameDay = s.startTime.startsWith(formData.date);
+            return s.status === "ACTIVE" && sameDay && s._id !== showtime._id;
+          });
           setExistingShowtimes(filtered);
         } catch {
           console.error("Failed to fetch room showtimes");
@@ -77,7 +87,7 @@ const AddShowtimeModal = ({
       };
       fetchRoomShowtimes();
     }
-  }, [isOpen, formData.roomId, formData.date]);
+  }, [isOpen, formData.roomId, formData.date, showtime._id]);
 
   if (!isOpen) return null;
 
@@ -145,7 +155,6 @@ const AddShowtimeModal = ({
       const endDateTime = new Date(startDateTime.getTime() + movieDuration * 60000);
 
       const payload = {
-        movieId,
         cinemaRoomId: formData.roomId,
         startTime: startDateTime,
         endTime: endDateTime,
@@ -154,15 +163,14 @@ const AddShowtimeModal = ({
           VIP: formData.priceVip,
           COUPLE: formData.priceCouple,
         },
-        status: "ACTIVE",
       };
 
-      await showtimeApi.createShowtime(payload);
-      toast.success("Showtime added successfully!");
+      await showtimeApi.updateShowtime(showtime._id, payload);
+      toast.success("Showtime updated successfully!");
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      toast.error(error.response.data.message || "Failed to add showtime.");
+    } catch {
+      toast.error("Failed to update showtime.");
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +192,7 @@ const AddShowtimeModal = ({
 
           <div className="mb-8">
             <h2 className="text-3xl font-black tracking-tighter text-white uppercase">
-              Add Showtime
+              Edit Showtime
             </h2>
             <p className="text-primary mt-1 text-xs font-bold tracking-widest uppercase">
               {movieTitle}
@@ -240,9 +248,6 @@ const AddShowtimeModal = ({
                       </option>
                     )}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-white/40">
-                    {/* Simple chevron icon could be added here */}
-                  </div>
                 </div>
               </div>
             </div>
@@ -338,9 +343,7 @@ const AddShowtimeModal = ({
                         width: `${getWidth(formData.startTime, calculateEndTime())}%`,
                       }}
                     >
-                      <span className="text-primary text-[9px] font-black uppercase">
-                        New Session
-                      </span>
+                      <span className="text-primary text-[9px] font-black uppercase">Current</span>
                     </div>
                   )}
                 </div>
@@ -420,7 +423,7 @@ const AddShowtimeModal = ({
                   <div className="border-primary-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
                 ) : (
                   <>
-                    <Save className="h-5 w-5" /> Save Showtime
+                    <Save className="h-5 w-5" /> Update Showtime
                   </>
                 )}
               </button>
@@ -432,4 +435,4 @@ const AddShowtimeModal = ({
   );
 };
 
-export default AddShowtimeModal;
+export default EditShowtimeModal;

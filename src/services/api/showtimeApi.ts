@@ -33,4 +33,19 @@ export const showtimeApi = {
       method: "GET",
     });
   },
+
+  updateShowtime: (id: string, data: Record<string, unknown>) => {
+    return request({
+      url: `/api/showtimes/${id}`,
+      method: "PATCH",
+      data,
+    });
+  },
+
+  deleteShowtime: (id: string) => {
+    return request({
+      url: `/api/showtimes/${id}`,
+      method: "DELETE",
+    });
+  },
 };
