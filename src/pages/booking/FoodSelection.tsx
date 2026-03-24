@@ -12,10 +12,10 @@ import {
   Clock,
 } from "lucide-react";
 import {movieApi} from "@/services/api/movieApi";
-import {createFoodBooking, addFoodToBooking, cancelBooking} from "@/services/api/bookingApi";
 import toast from "react-hot-toast";
 import {foodApi} from "@/services/api/foodApi";
 import {cartApi} from "@/services/api/cartApi";
+
 
 const formatVND = (amount: number) =>
   new Intl.NumberFormat("vi-VN", {style: "currency", currency: "VND"}).format(amount);
@@ -24,6 +24,7 @@ const FoodSelection = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const movieId = searchParams.get("movieId");
+  const showtimeId = searchParams.get("showtimeId");
   const movieBookingId = searchParams.get("movieBookingId");
   const expiredAtParam = searchParams.get("expiredAt");
   const seats = searchParams.get("seats")?.split(",") || [];
@@ -134,38 +135,24 @@ const FoodSelection = () => {
   };
 
   const handleCheckout = async () => {
-    if (!movieBookingId) {
-      toast.error("Missing booking record. Please restart your booking.");
-      return;
-    }
-    
     setSubmitting(true);
     try {
       const cartItems = Object.entries(cart)
         .filter(([, qty]) => qty > 0)
         .map(([foodId, quantity]) => ({foodId, quantity}));
 
-      // 1. Process food order and attach to the initial Held reservation
-      if (cartItems.length > 0) {
-        const foodRes = await createFoodBooking(cartItems);
-        const foodBookingId = foodRes._id || foodRes.data?._id;
-        
-        if (foodBookingId) {
-          await addFoodToBooking(movieBookingId, foodBookingId);
-        }
-        await cartApi.clearCart();
-      }
-
-      // 2. Navigate to payment method selection (VNPay)
+      // Pass food items via navigation state to PaymentMethod.
+      // The actual FoodBooking is created at payment time (Option 2 flow).
       const params = new URLSearchParams({
-        movieBookingId,
+        movieBookingId: movieBookingId || "",
         ...(movieId && { movieId }),
         ...(expiredAtParam && { expiredAt: expiredAtParam }),
         seats: seats.join(","),
         ticketTotal: String(ticketPrice),
-        foodTotal: String(foodTotal),
       });
-      navigate(`/payment-method?${params.toString()}`);
+      navigate(`/payment-method?${params.toString()}`, {
+        state: { foodItems: cartItems },
+      });
     } catch (error: any) {
       console.error(error);
       toast.error(error?.response?.data?.message || "Something went wrong.");
@@ -192,17 +179,13 @@ const FoodSelection = () => {
       <div className="mb-16 flex flex-col justify-between gap-8 md:flex-row md:items-center">
         <div className="flex items-center gap-6">
           <button
-            onClick={async () => {
-              if (movieBookingId) {
-                toast.loading("Releasing held seats...", { id: "release" });
-                try {
-                  await cancelBooking(movieBookingId);
-                  toast.success("Seats released.", { id: "release" });
-                } catch (e) {
-                  toast.dismiss("release");
-                }
-              }
-              navigate(-1);
+            onClick={() => {
+              const params = new URLSearchParams({
+                movieId: movieId || "",
+                movieBookingId: movieBookingId || "",
+                seats: seats.join(","),
+              });
+              navigate(`/booking/${showtimeId}?${params.toString()}`);
             }}
             className="glass-card hover:text-primary shadow-inner-glossy rounded-2xl p-4 text-white/40 transition-all hover:scale-110 active:scale-95"
           >

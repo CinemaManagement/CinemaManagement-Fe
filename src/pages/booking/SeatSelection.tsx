@@ -1,5 +1,5 @@
 import {useState, useRef, useEffect} from "react";
-import {useParams, useNavigate} from "react-router-dom";
+import {useParams, useNavigate, useSearchParams} from "react-router-dom";
 import {ChevronLeft, Info, Ticket, Maximize, Minimize, Move, ChevronRight} from "lucide-react";
 import toast from "react-hot-toast";
 import type {Movie, Showtime} from "@/types/document";
@@ -11,7 +11,8 @@ const SeatSelection = () => {
   const navigate = useNavigate();
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [movie, setMovie] = useState<Movie | null>(null);
-  const movieId = showtimeId?.split("-")[0];
+  const [searchParams] = useSearchParams();
+  const movieId = searchParams.get("movieId");
   const [showtime, setShowtime] = useState<Showtime | null>(null);
   const [isHolding, setIsHolding] = useState(false);
 
@@ -125,20 +126,29 @@ const SeatSelection = () => {
       setSelectedSeats([...selectedSeats, id]);
     }
   };
-
+  console.log("Selected Seat: ",selectedSeats);
+  
   const totalPrice = selectedSeats.reduce((sum, id) => {
     return sum + getSeatPrice(id);
   }, 0);
+
+  useEffect(() => {
+    const seatsFromUrl = searchParams.get("seats")?.split(",") || [];
+    if (seatsFromUrl.length > 0 && selectedSeats.length === 0) {
+      setSelectedSeats(seatsFromUrl);
+    }
+  }, [searchParams]);
 
   const handleContinue = async () => {
     if (selectedSeats.length === 0) return;
     setIsHolding(true);
     try {
-      const res = await createMovieBooking(showtimeId as string, selectedSeats);
+      const existingBookingId = searchParams.get("movieBookingId") || undefined;
+      const res = await createMovieBooking(showtimeId as string, selectedSeats, existingBookingId);
       const movieBookingId = res._id || res.data?._id;
       const expiredAt = res.expiredAt || res.data?.expiredAt;
       toast.success("Thrones reserved! You have 10 minutes to grab snacks.");
-      navigate(`/food-selection?movieId=${movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}&seats=${selectedSeats.join(",")}&ticketTotal=${totalPrice}`);
+      navigate(`/food-selection?movieId=${movie?._id || movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}&seats=${selectedSeats.join(",")}&ticketTotal=${totalPrice}`);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to reserve seats");
     } finally {

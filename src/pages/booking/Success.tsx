@@ -86,7 +86,7 @@ const BookingSuccess = () => {
              </div>
           </div>
         </div>
-
+W
       </div>
     </div>
   );
