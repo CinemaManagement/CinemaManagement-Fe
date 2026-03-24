@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {useState, useEffect, useRef} from "react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import {jsPDF} from "jspdf";
 import "jspdf-autotable";
 import {
@@ -14,6 +17,8 @@ import {
 import {statisticsApi} from "@/services/api/statisticsApi";
 import toast from "react-hot-toast";
 
+dayjs.extend(relativeTime);
+
 interface DashboardStats {
   totalRevenue: number;
   activeUsers: number;
@@ -22,6 +27,7 @@ interface DashboardStats {
   ticketRevenue: number;
   foodRevenue: number;
   productionShare: number;
+  recentTransactions: any[];
   timeRange: {
     start: string;
     end: string;
@@ -90,40 +96,14 @@ const AdminDashboard = () => {
     },
   ];
 
-  const recentTransactions = [
-    {
-      id: "TX-9921",
-      user: "Alex Morgan",
-      movie: "Star Wars",
-      amount: "$36.00",
-      status: "Completed",
-      date: "2 min ago",
-    },
-    {
-      id: "TX-9920",
-      user: "Sarah Chen",
-      movie: "Oppenheimer",
-      amount: "$15.00",
-      status: "Pending",
-      date: "15 min ago",
-    },
-    {
-      id: "TX-9919",
-      user: "Mike Ross",
-      movie: "Dune: Part Two",
-      amount: "$45.00",
-      status: "Completed",
-      date: "1 hour ago",
-    },
-    {
-      id: "TX-9918",
-      user: "Jessica P.",
-      movie: "Avatar",
-      amount: "$18.00",
-      status: "Canceled",
-      date: "3 hours ago",
-    },
-  ];
+  const recentTransactions = data.recentTransactions.map((tx: any) => ({
+    id: tx.bookingCode,
+    user: tx.userId?.email || "Unknown Customer",
+    movie: tx.showtimeId?.movieId?.title || "N/A",
+    amount: `$${tx.totalAmount.toLocaleString()}`,
+    status: tx.status === "PAID" ? "Completed" : tx.status === "HELD" ? "Pending" : "Canceled",
+    date: dayjs(tx.createdAt).fromNow(),
+  }));
 
   const totalRev = data.ticketRevenue + data.foodRevenue || 1;
   const ticketPercent = Math.round((data.ticketRevenue / totalRev) * 100);
@@ -151,7 +131,7 @@ const AdminDashboard = () => {
         `Reporting Period: ${new Date(data.timeRange.start).toLocaleDateString()} - ${new Date(data.timeRange.end).toLocaleDateString()}`,
         105,
         34,
-        {align: "center"}
+        {align: "center"},
       );
 
       // 2. Financial Summary Table
@@ -184,11 +164,7 @@ const AdminDashboard = () => {
 
       const breakdownData = [
         ["Ticket Sales", `$${data.ticketRevenue.toLocaleString()}`, `${ticketPercent}%`],
-        [
-          "Food & Drinks",
-          `$${data.foodRevenue.toLocaleString()}`,
-          `${100 - ticketPercent}%`,
-        ],
+        ["Food & Drinks", `$${data.foodRevenue.toLocaleString()}`, `${100 - ticketPercent}%`],
       ];
 
       doc.autoTable({
@@ -233,7 +209,7 @@ const AdminDashboard = () => {
           `Page ${i} of ${pageCount} - Confidential Cinema Report`,
           105,
           doc.internal.pageSize.height - 10,
-          {align: "center"}
+          {align: "center"},
         );
       }
 

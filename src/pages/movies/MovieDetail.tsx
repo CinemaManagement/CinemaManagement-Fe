@@ -16,7 +16,7 @@ import {
 import {movieApi} from "@/services/api/movieApi";
 import {showtimeApi} from "@/services/api/showtimeApi";
 import {useAppSelector} from "@/store";
-import {ShowingStatus, UserRole} from "@/types/document";
+import {ShowingStatus, ShowtimeStatus, UserRole} from "@/types/document";
 import AddShowtimeModal from "./components/AddShowtimeModal";
 import EditShowtimeModal from "./components/EditShowtimeModal";
 import toast from "react-hot-toast";
@@ -415,8 +415,23 @@ const MovieDetail = () => {
                       <div
                         key={s._id}
                         onClick={() => navigate(`/booking/${s._id}`)}
-                        className="group hover:border-primary/50 shadow-inner-glossy flex w-full transform cursor-pointer items-center justify-between rounded-3xl border border-white/5 bg-white/5 p-6 transition-all hover:-translate-x-1"
+                        className="group hover:border-primary/50 shadow-inner-glossy relative flex w-full transform cursor-pointer items-center justify-between rounded-3xl border border-white/5 bg-white/5 p-6 transition-all hover:-translate-x-1"
                       >
+                        {!!user?.role && user?.role !== UserRole.CUSTOMER && (
+                          <span
+                            className={
+                              s.status === ShowtimeStatus.ACTIVE
+                                ? "absolute top-0 right-0 rounded-full bg-green-500 px-2 py-1 text-[8px] font-black text-white"
+                                : s.status === ShowtimeStatus.FINISHED
+                                  ? "absolute top-0 right-0 rounded-full bg-red-500 px-2 py-1 text-[8px] font-black text-white"
+                                  : s.status === ShowtimeStatus.SHOWING
+                                    ? "absolute top-0 right-0 rounded-full bg-blue-500 px-2 py-1 text-[8px] font-black text-white"
+                                    : "bg-primary absolute top-0 right-0 rounded-full px-2 py-1 text-[8px] font-black text-white"
+                            }
+                          >
+                            {s?.status}
+                          </span>
+                        )}
                         <div className="flex items-center gap-5">
                           <span className="group-hover:text-primary text-2xl font-black text-white transition-colors">
                             {formatTime(s.startTime)}
