@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import {useState, useEffect} from "react";
 import {useNavigate} from "react-router-dom";
 import {useAppSelector} from "@/store";
@@ -12,6 +13,7 @@ const Movies = () => {
   const navigate = useNavigate();
   const {user} = useAppSelector((state) => state.auth);
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<ShowingStatus | "ALL">("ALL");
 
@@ -22,11 +24,22 @@ const Movies = () => {
   const fetchMovies = async () => {
     try {
       setIsLoading(true);
-      const response =
-        user?.role === UserRole.CUSTOMER
-          ? await movieApi.getMovies()
-          : await movieApi.getMoviesByManager();
-      setMovies(response.data?.data || response.data || []);
+      if (user?.role !== UserRole.MANAGER) {
+        const [allRes, nowRes, soonRes] = await Promise.all([
+          movieApi.getMovies(),
+          movieApi.getMoviesByStatus(ShowingStatus.NOW_SHOWING),
+          movieApi.getMoviesByStatus(ShowingStatus.COMING_SOON),
+        ]);
+        const all = allRes.data || [];
+        const now = nowRes.data || [];
+        const soon = soonRes.data || [];
+        setAllMovies(all);
+        setMovies([...now, ...soon]);
+      } else {
+        const response = await movieApi.getMoviesByManager();
+        setAllMovies(response.data || []);
+        setMovies(response.data || []);
+      }
     } catch {
       toast.error("Failed to fetch movies.");
     } finally {
@@ -75,7 +88,7 @@ const Movies = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] pb-32 font-sans">
-      {user?.role === UserRole.CUSTOMER && (
+      {(!user?.role || user?.role !== UserRole.MANAGER) && (
         <section className="relative overflow-hidden bg-black px-4 py-16 md:px-8">
           <div className="pointer-events-none absolute top-0 left-1/2 h-[1000px] w-full -translate-x-1/2 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
 
@@ -110,7 +123,7 @@ const Movies = () => {
         </section>
       )}
 
-      {user?.role === UserRole.CUSTOMER && (
+      {(!user?.role || user?.role !== UserRole.MANAGER) && (
         <section className="relative overflow-hidden px-4 py-32 md:px-8">
           <div className="relative z-20 mx-auto max-w-[1800px]">
             <div className="text-center">
@@ -162,7 +175,7 @@ const Movies = () => {
             </div>
 
             <div className="space-y-6">
-              {movies
+              {allMovies
                 .filter((m) => filter === "ALL" || m.showingStatus === filter)
                 .map((movie) => (
                   <div
@@ -230,12 +243,22 @@ const Movies = () => {
                       </div>
 
                       <div className="mt-8 flex items-center gap-4">
-                        <button
-                          onClick={() => navigate(URL.MovieDetail.replace(":id", movie._id))}
-                          className="cursor-pointer rounded-full bg-[#d4af37] px-10 py-3.5 text-sm font-black tracking-[0.2em] text-black uppercase shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-95"
-                        >
-                          Đặt vé ngay
-                        </button>
+                        {(() => {
+                          if (
+                            (!user?.role || user?.role === UserRole.CUSTOMER) &&
+                            movie.showingStatus === ShowingStatus.NOW_SHOWING &&
+                            movie.status === MovieStatus.ACTIVE
+                          ) {
+                            return (
+                              <button
+                                onClick={() => navigate(URL.MovieDetail.replace(":id", movie._id))}
+                                className="cursor-pointer rounded-full bg-[#d4af37] px-10 py-3.5 text-sm font-black tracking-[0.2em] text-black uppercase shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-95"
+                              >
+                                Đặt vé ngay
+                              </button>
+                            );
+                          }
+                        })()}
                         <div className="flex gap-2">
                           {canEditMovie && (
                             <button
@@ -401,6 +424,24 @@ const InfinitePremiumCarousel = ({
                     {movie.ageRestriction || "13"} <Plus size={12} strokeWidth={3} />
                   </div>
                 )}
+                <div className="absolute top-0 left-0 h-full w-full bg-linear-to-t from-black via-black/30 to-transparent"></div>
+                <div
+                  className={`absolute bottom-5 left-5 space-y-4 text-center transition-all duration-1000 ${isActive ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"}`}
+                >
+                  <h3 className="text-left text-3xl font-black tracking-tighter text-white uppercase drop-shadow-2xl">
+                    {movie.title}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {movie.category?.map((category: string) => (
+                      <span
+                        key={category}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[8px] font-black tracking-widest text-[#d4af37] uppercase backdrop-blur-sm"
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
                 {isActive && (
                   <div className="absolute top-10 right-10 flex flex-col gap-5">
                     {canEdit && (
@@ -427,23 +468,6 @@ const InfinitePremiumCarousel = ({
                     )}
                   </div>
                 )}
-              </div>
-              <div
-                className={`mt-8 space-y-4 text-center transition-all duration-1000 ${isActive ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"}`}
-              >
-                <h3 className="text-left text-xl font-black tracking-tighter text-white uppercase drop-shadow-2xl">
-                  {movie.title}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {movie.category?.map((category: string) => (
-                    <span
-                      key={category}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[8px] font-black tracking-widest text-[#d4af37] uppercase backdrop-blur-sm"
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           );

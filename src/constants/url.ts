@@ -15,6 +15,8 @@ const URL = {
   FoodManagement: "/admin/foods",
   FoodSelection: "/food-selection",
   Booking: "/booking/:showtimeId",
+  PaymentMethod: "/payment-method",
+  VnpayReturn: "/vnpay-return",
   PaymentSuccess: "/payment-success",
   Profile: "/profile",
 
@@ -28,6 +30,8 @@ const URL = {
   AdminRoomAdd: "/admin/rooms/add",
   AdminRoomEdit: "/admin/rooms/edit/:id",
   AdminRoomDetail: "/admin/rooms/:id",
+  AllBookings: "/cinema/bookings",
+  CheckIn: "/cinema/checkin/:id",
 };
 
 export default URL;

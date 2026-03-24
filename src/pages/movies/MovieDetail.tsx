@@ -7,6 +7,7 @@ import {UserRole} from "@/types/document";
 import AddShowtimeModal from "./components/AddShowtimeModal";
 import toast from "react-hot-toast";
 import type {Movie} from "@/types/document";
+import dayjs from "dayjs";
 
 interface PersonItem {
   name: string;
@@ -52,6 +53,23 @@ const MovieDetail = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const {user} = useAppSelector((state) => state.auth);
   const isManager = user?.role === UserRole.MANAGER;
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [isRating, setIsRating] = useState(false);
+
+  const handleRate = async (rate: number) => {
+    if (!id) return;
+    try {
+      setIsRating(true);
+      await movieApi.rateMovie(id, rate);
+      toast.success("Cảm ơn đánh giá của bạn!");
+      setRating(rate);
+    } catch {
+      toast.error("Đánh giá thất bại!");
+    } finally {
+      setIsRating(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -59,19 +77,23 @@ const MovieDetail = () => {
         setIsLoading(true);
         if (!id) return;
 
-        const [movieRes, showtimesRes] = await Promise.all([
+        const [movieRes, showtimesRes, ratingRes] = await Promise.all([
           movieApi.getMovieById(id),
           movieApi.getShowtimesByMovieId(id),
+          movieApi.getUserRating(id).catch(() => null),
         ]);
 
         const mData = movieRes.data?.data || movieRes.data;
         const sData = showtimesRes.data?.data || showtimesRes.data;
+        const rData = ratingRes?.data?.data || ratingRes?.data;
 
         setMovie(mData);
-        console.log(mData);
         setShowtimesData(sData || []);
-      } catch (err) {
-        console.error("Error fetching movie data:", err);
+        if (rData && rData.score) {
+          setRating(rData.score);
+        }
+      } catch {
+        console.error("Error fetching movie data:");
         toast.error("Failed to fetch movie details.");
         navigate("/movies");
       } finally {
@@ -81,7 +103,6 @@ const MovieDetail = () => {
     fetchData();
   }, [id, navigate]);
 
-  // Process showtimes to get unique dates
   const availableDates = Array.from(
     new Set(showtimesData.map((s) => new Date(s.startTime).toDateString())),
   ).map((dateStr) => {
@@ -102,8 +123,8 @@ const MovieDetail = () => {
     : [];
 
   const getRoomType = (roomName: string) => {
-    if (roomName.includes("-")) {
-      return roomName.split("-")[1].trim().toUpperCase();
+    if (roomName?.includes("-")) {
+      return roomName?.split("-")[1].trim().toUpperCase();
     }
     return "Standard";
   };
@@ -127,8 +148,7 @@ const MovieDetail = () => {
   return (
     <>
       <div className="overflow-hidden pb-32">
-        {/* Movie Hero Header */}
-        <section className="relative h-[80vh] w-full pt-10">
+        <section className="relative h-[90vh] w-full pt-10">
           <div className="absolute inset-0">
             <img src={movie.posterUrl} alt={movie.title} className="h-full w-full object-cover" />
             <div className="from-background via-background/60 absolute inset-0 bg-linear-to-t to-transparent" />
@@ -136,8 +156,11 @@ const MovieDetail = () => {
           </div>
 
           <div className="absolute bottom-0 left-0 mx-auto flex w-full max-w-7xl flex-col items-end gap-12 p-8 md:flex-row md:p-20">
-            <div className="hidden aspect-2/3 w-72 shrink-0 -translate-y-12 -rotate-1 transform overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] md:block">
+            <div className="relative aspect-2/3 w-72 shrink-0 -translate-y-12 -rotate-1 transform overflow-hidden rounded-3xl border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] md:block">
               <img src={movie.posterUrl} alt={movie.title} className="h-full w-full object-cover" />
+              <span className="bg-secondary absolute top-4 left-4 rounded-md px-3 py-1 text-xs text-white">
+                  {movie.ageRestriction}+
+                </span>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-8 flex flex-col gap-6 duration-700">
@@ -158,17 +181,16 @@ const MovieDetail = () => {
 
               <div className="flex flex-wrap items-center gap-8 text-sm font-black tracking-[0.2em] text-white/80 uppercase">
                 <span className="shadow-inner-glossy flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2">
-                  <Star className="text-primary fill-primary h-4 w-4" /> {movie.rating} IMDB
+                  <Star className="text-primary fill-primary h-4 w-4" />{" "}
+                  {movie.rate ? movie.rate + " IMDB" : "Chưa có đánh giá"}
                 </span>
                 <span className="flex items-center gap-2">
-                  <Clock className="text-primary h-4 w-4" /> {movie.duration}
+                  <Clock className="text-primary h-4 w-4" /> {movie.duration} minutes
                 </span>
                 <span className="flex items-center gap-2">
-                  <Calendar className="text-primary h-4 w-4" /> {movie.releaseDate}
+                  <Calendar className="text-primary h-4 w-4" /> {dayjs(movie.releaseDate).format("DD/MM/YYYY")}
                 </span>
-                <span className="bg-secondary rounded-md px-3 py-1 text-xs text-white">
-                  {movie.ageRestriction}+
-                </span>
+                
               </div>
             </div>
           </div>
@@ -300,7 +322,7 @@ const MovieDetail = () => {
           </div>
 
           {/* Right Column: Showtime Selection */}
-          <div className="lg:col-span-2">
+          <div className="relative lg:col-span-2 space-y-8">
             <div className="glass-card shadow-inner-glossy sticky top-24 rounded-[3rem] p-10 shadow-2xl">
               <div className="mb-8 flex items-center justify-between">
                 <h2 className="flex items-center gap-4 text-2xl font-black tracking-tighter text-white uppercase">
@@ -332,22 +354,22 @@ const MovieDetail = () => {
                       : "No Date Selected"}
                   </span>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-4">
+                <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar snap-x">
                   {availableDates.map((d, i) => (
                     <button
                       key={i}
                       onClick={() => setSelectedDateIndex(i)}
-                      className={`flex min-w-[60px] transform flex-col items-center rounded-lg border py-2 transition-all active:scale-95 ${
+                      className={`flex min-w-[75px] transform flex-col items-center py-4 transition-all active:scale-95 snap-center ${
                         selectedDateIndex === i
-                          ? "bg-primary text-primary-foreground border-primary btn-glossy z-10 scale-110 shadow-[0_0_25px_rgba(var(--primary),0.3)]"
-                          : "shadow-inner-glossy border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                          ? "bg-[#d4af37] text-black border-[#d4af37] btn-glossy z-10 scale-105 shadow-[0_0_25px_rgba(212,175,55,0.4)] rounded-2xl rounded-tr-sm rounded-bl-sm"
+                          : "shadow-inner-glossy border-white/10 bg-white/5 text-white/60 hover:bg-white/10 rounded-2xl"
                       }`}
                     >
-                      <span className="mb-1 text-[9px] font-black tracking-widest uppercase opacity-60">
+                      <span className="mb-1 text-[10px] font-black tracking-widest uppercase opacity-60">
                         {d.day}
                       </span>
-                      <span className="text-2xl leading-none font-black">{d.date}</span>
-                      <span className="mt-1 text-[8px] font-black tracking-widest uppercase opacity-40">
+                      <span className="text-3xl leading-none font-black">{d.date}</span>
+                      <span className="mt-1 text-[9px] font-black tracking-widest uppercase opacity-40">
                         {d.month}
                       </span>
                     </button>
@@ -383,7 +405,7 @@ const MovieDetail = () => {
                             })}
                           </span>
                           <span className="group-hover:text-primary/60 group-hover:border-primary/20 rounded border border-white/5 bg-white/5 px-2.5 py-1 text-[9px] font-black text-white/40 uppercase transition-all">
-                            {getRoomType(s.cinemaRoomId.roomName)}
+                            {getRoomType(s.cinemaRoomId?.roomName)}
                           </span>
                         </div>
                         <div className="flex items-center gap-4">
@@ -412,6 +434,51 @@ const MovieDetail = () => {
                   Booking confirms your choice of movie and time. Seat selection and food ordering
                   follow in the next steps.
                 </p>
+              </div>
+            </div>
+
+            {/* Star Rating Section (Dedicated) */}
+            <div className="glass-card shadow-inner-glossy rounded-[3rem] p-8 shadow-2xl">
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="flex items-center gap-3 text-xl font-black tracking-tighter text-white uppercase">
+                    <Star className="text-primary h-6 w-6 fill-primary" /> Rated by you
+                  </h2>
+                  {rating > 0 && (
+                    <span className="text-primary text-[10px] font-black tracking-widest uppercase">
+                      Thanks for voting!
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 p-6 transition-all hover:bg-white/10">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
+                      Select Stars
+                    </p>
+                    <p className="text-xs font-medium text-white/40">How would you rate this?</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        disabled={isRating}
+                        onClick={() => handleRate(Number(star))}
+                        onMouseEnter={() => setHover(star)}
+                        onMouseLeave={() => setHover(0)}
+                        className="transition-all hover:scale-125 disabled:opacity-50"
+                      >
+                        <Star
+                          className={`h-6 w-6 transition-all ${
+                            star <= (hover || rating)
+                              ? "text-[#d4af37] fill-[#d4af37] drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]"
+                              : "text-white/20"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

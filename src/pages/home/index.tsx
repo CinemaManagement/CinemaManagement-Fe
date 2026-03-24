@@ -36,7 +36,6 @@ const Home = () => {
 
   return (
     <div className="flex flex-col gap-16 pb-20 overflow-hidden">
-      {/* Hero Section */}
       {featuredMovie && (
         <section className="relative h-[90vh] w-full group">
           <div className="absolute inset-0 overflow-hidden">
@@ -49,7 +48,7 @@ const Home = () => {
             <div className="absolute inset-0 bg-linear-to-r from-background/80 via-transparent to-transparent" />
           </div>
 
-          <div className="absolute bottom-0 left-0 w-full p-8 top-[-44px] md:p-24 flex flex-col gap-6 max-w-5xl animate-in fade-in slide-in-from-left-12 duration-1000">
+          <div className="absolute bottom-0 left-0 w-full p-8 top-0 md:p-24 flex flex-col gap-6 max-w-5xl animate-in fade-in slide-in-from-left-12 duration-1000">
             <div className="flex items-center gap-3">
               <span className="px-4 py-1.5 bg-primary/20 backdrop-blur-md text-primary text-xs font-black rounded-full uppercase tracking-[0.2em] border border-primary/30 shadow-inner-gold">
                 Trending Now
@@ -64,7 +63,7 @@ const Home = () => {
               <span className="text-gradient-gold italic">{featuredMovie.title.split(':')[1] || ''}</span>
             </h1>
             
-            <p className="text-xl text-white/70 max-w-2xl leading-relaxed font-medium">
+            <p className="text-xl text-white/70 max-w-2xl leading-relaxed font-medium line-clamp-3">
               {featuredMovie.description}
             </p>
 
@@ -150,7 +149,13 @@ const Home = () => {
                 <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                   <span>{movie.duration} min</span>
                   <span className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-                  <span>{movie.category?.[0] || 'Unknown'}</span>
+                  {
+                    movie.category?.map((g: string, i: number) => (
+                      <span key={i} className="px-2 py-1 bg-white/10 backdrop-blur-md rounded-md text-[8px] font-black text-white uppercase border border-white/10">
+                        {g}
+                      </span>
+                    ))
+                  }
                 </div>
               </div>
             </Link>

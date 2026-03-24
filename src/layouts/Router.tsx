@@ -4,7 +4,7 @@ import {Route, Routes} from "react-router-dom";
 import URL from "@/constants/url";
 import type {ItemRouteType} from "@/types/routes/router.type";
 import DefaultLayout from "./DefaultLayout";
-import ProtectedRoute from "@/routes/ProtectedRoute";
+import ProtectedRoute from "./ProtectedRoute";
 
 import Login from "@/pages/login";
 import NotFound from "@/pages/404";
@@ -25,6 +25,11 @@ import {UserRole} from "@/types/document";
 import FoodManagement from "@/pages/foods/FoodManagement";
 import RoomManagement from "@/pages/rooms/RoomManagement";
 import RoomForm from "@/pages/rooms/RoomForm";
+import RoomDetail from "@/pages/rooms/RoomDetail";
+import PaymentMethod from "@/pages/booking/PaymentMethod";
+import VnpayReturn from "@/pages/booking/VnpayReturn";
+import AllBookings from "@/pages/cinema/AllBookings";
+import CheckInConfirm from "@/pages/cinema/CheckIn";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -38,7 +43,6 @@ export const menuRouterItems: ItemRouteType[] = [
     key: URL.Showtimes,
     components: <Showtimes />,
     layout: "default",
-    roles: [UserRole.CUSTOMER],
     title: "Showtimes",
     isMenu: true,
   },
@@ -67,6 +71,14 @@ export const menuRouterItems: ItemRouteType[] = [
     isMenu: true,
   },
   {
+    key: URL.AllBookings,
+    components: <AllBookings />,
+    roles: [UserRole.CINEMA],
+    layout: "default",
+    title: "All Bookings",
+    isMenu: true,
+  },
+  {
     key: URL.Admin,
     components: <AdminDashboard />,
     layout: "default",
@@ -88,11 +100,16 @@ const detailRouterItems: ItemRouteType[] = [
   {key: URL.MovieDetail, components: <MovieDetail />, layout: "default"},
   {key: URL.MovieAdd, components: <MovieForm />, layout: "default"},
   {key: URL.MovieEdit, components: <MovieForm />, layout: "default"},
-  {key: URL.Booking, components: <SeatSelection />, layout: "default"},
-  {key: URL.FoodSelection, components: <FoodSelection />, layout: "default"},
-  {key: URL.Profile, components: <Profile />, layout: "default"},
-  {key: URL.PaymentSuccess, components: <BookingSuccess />, layout: "default"},
+  {key: URL.Booking, components: <SeatSelection />, layout: "default", roles: [UserRole.CUSTOMER]},
+  {key: URL.FoodSelection, components: <FoodSelection />, layout: "default", roles: [UserRole.CUSTOMER]},
+  {key: URL.Profile, components: <Profile />, layout: "default", roles: [UserRole.CUSTOMER, UserRole.MANAGER, UserRole.ADMIN]},
+  {key: URL.PaymentSuccess, components: <BookingSuccess />, layout: "default", roles: [UserRole.CUSTOMER]},
+  {key: URL.PaymentMethod, components: <PaymentMethod />, layout: "default"},
+  {key: URL.VnpayReturn, components: <VnpayReturn />, layout: "default"},
   {key: URL.AdminRoomAdd, components: <RoomForm />, layout: "default"},
+  {key: URL.AdminRoomEdit, components: <RoomForm />, layout: "default"},
+  {key: URL.AdminRoomDetail, components: <RoomDetail />, layout: "default"},
+  {key: URL.CheckIn, components: <CheckInConfirm />, layout: "default"},
 ];
 
 const allRouters = [...menuRouterItems, ...publicRouterItems, ...detailRouterItems];
@@ -102,12 +119,14 @@ export default function Routers() {
     <Routes>
       {allRouters.map((item) => {
         let element = item.components;
+
+        // Wrap with ProtectedRoute only if roles are specified
+        if (item.roles && item.roles.length > 0) {
+          element = <ProtectedRoute>{element}</ProtectedRoute>;
+        }
+
         if (item.layout === "default") {
-          element = (
-            <DefaultLayout>
-              <ProtectedRoute>{element}</ProtectedRoute>
-            </DefaultLayout>
-          );
+          element = <DefaultLayout>{element}</DefaultLayout>;
         }
 
         return <Route key={item.key} path={item.key} element={element} />;
