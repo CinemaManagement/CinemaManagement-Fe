@@ -11,4 +11,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          "vendor-icons": ["lucide-react"],
+          "vendor-libs": ["axios", "jspdf", "jspdf-autotable", "html-to-image"],
+        },
+      },
+    },
+  },
 });
