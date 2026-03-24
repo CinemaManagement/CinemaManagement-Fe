@@ -13,7 +13,6 @@ const VnpayReturn = () => {
   const [status, setStatus] = useState<"loading" | "success" | "error" | "already-paid">("loading");
   const [message, setMessage] = useState("");
   const [bookingId, setBookingId] = useState("");
-  const [booking, setBooking] = useState<any>(null);
   const [finalAmount, setFinalAmount] = useState("");
 
   useEffect(() => {
@@ -54,9 +53,9 @@ const VnpayReturn = () => {
             setStatus("success");
             setMessage(data.message || "Payment successful!");
             setBookingId(data.bookingId || "");
-            const {finalAmount, bookingDetail} = await confirmPayment(bookingId,{method:"VNPAY", transactionId:transactionNo||'', });
+            const {finalAmount} = await confirmPayment(bookingId,{method:"VNPAY", transactionId:transactionNo||'', });
             setFinalAmount(finalAmount);
-            setBooking(bookingDetail);
+            
             toast.success("Payment confirmed!");
           }
         } else {

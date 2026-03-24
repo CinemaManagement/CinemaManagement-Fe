@@ -36,12 +36,7 @@ const PaymentMethod = () => {
   const [movie, setMovie] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  // finalAmount is returned by the checkout endpoint after food is attached
-  const [finalAmount, setFinalAmount] = useState<number | null>(null);
 
-  // Derive food total from passed state + ticket total for the pre-checkout display
-  // (exact amount will come back from backend after checkout)
-  const foodDisplayTotal = finalAmount !== null ? finalAmount - ticketTotal : 0;
 
   // Countdown timer
   useEffect(() => {
@@ -85,7 +80,7 @@ const PaymentMethod = () => {
       if (res.paymentUrl) {
         // Clear the cart before redirecting (food is now committed to the booking)
         try { await cartApi.clearCart(); } catch (_) { /* non-critical */ }
-        setFinalAmount(res.finalAmount);
+
         window.location.href = res.paymentUrl;
       } else {
         toast.error("Failed to create payment URL");
@@ -98,7 +93,7 @@ const PaymentMethod = () => {
     }
   };
 
-  const grandTotal = ticketTotal + (foodItems.length > 0 ? foodDisplayTotal : 0);
+
 
   return (
     <div className="animate-in fade-in mx-auto min-h-screen max-w-5xl px-4 pt-12 pb-32 duration-700 sm:px-6 lg:px-8">
