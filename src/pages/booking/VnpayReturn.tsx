@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useState, useRef} from "react";
 import {useSearchParams, useNavigate} from "react-router-dom";
 import {CheckCircle2, XCircle, Loader2,TriangleAlert, House} from "lucide-react";
 import toast from "react-hot-toast";
@@ -14,8 +14,12 @@ const VnpayReturn = () => {
   const [message, setMessage] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [finalAmount, setFinalAmount] = useState("");
+  const calledRef = useRef(false);
 
   useEffect(() => {
+    if (calledRef.current) return;
+    calledRef.current = true;
+
     const verifyPayment = async () => {
       try {
         // Forward all VNPay query params to backend for verification
@@ -47,9 +51,12 @@ const VnpayReturn = () => {
         }
 
         if (data.success) {
-          setStatus("success");
-          setMessage(data.message || "Payment successful!");
-          if (data.message !== "Booking already paid") {
+          if (data.message === "Booking already paid") {
+            setStatus("already-paid");
+            setMessage("This booking has already been paid for.");
+          } else {
+            setStatus("success");
+            setMessage(data.message || "Payment successful!");
             toast.success("Payment confirmed!");
           }
           setBookingId(data.bookingId || "");
