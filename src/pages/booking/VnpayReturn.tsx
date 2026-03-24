@@ -47,12 +47,9 @@ const VnpayReturn = () => {
         }
 
         if (data.success) {
-          if (data.message === "Booking already paid") {
-            setStatus("already-paid");
-            setMessage("This booking has already been paid for.");
-          } else {
-            setStatus("success");
-            setMessage(data.message || "Payment successful!");
+          setStatus("success");
+          setMessage(data.message || "Payment successful!");
+          if (data.message !== "Booking already paid") {
             toast.success("Payment confirmed!");
           }
           setBookingId(data.bookingId || "");
