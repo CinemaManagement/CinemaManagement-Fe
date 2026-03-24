@@ -8,11 +8,11 @@ export const createFoodBooking = (items: { foodId: string; quantity: number }[])
   }).then(res => res.data);
 };
 
-export const createMovieBooking = (showtimeId: string, seats: string[], foodBookingId?: string) => {
+export const createMovieBooking = (showtimeId: string, seats: string[], movieBookingId?: string) => {
   return request({
     url: '/api/bookings/movie',
     method: 'POST',
-    data: { showtimeId, seats, foodBookingId }
+    data: { showtimeId, seats, movieBookingId }
   }).then(res => res.data);
 };
 
@@ -38,6 +38,19 @@ export const createVnpayPaymentUrl = (id: string, discountCode?: string) => {
   }).then(res => res.data);
 };
 
+/** Combined checkout: creates FoodBooking (optional) + returns VNPay URL in one call */
+export const checkoutAndPay = (
+  movieBookingId: string,
+  foodItems: { foodId: string; quantity: number }[],
+  discountCode?: string
+) => {
+  return request({
+    url: `/api/bookings/${movieBookingId}/checkout`,
+    method: 'POST',
+    data: { foodItems, ...(discountCode && { discountCode }) }
+  }).then(res => res.data);
+};
+
 export const getBookingHistory = () => {
   return request({
     url: '/api/bookings/history',
@@ -59,7 +72,7 @@ export const cancelBooking = (id: string) => {
   }).then(res => res.data);
 };
 
-export const addFoodToBooking = ( movieBookingId: string, foodBookingId: string ) => {
+export const addFoodToBooking = (movieBookingId: string, foodBookingId: string) => {
   return request({
     url: '/api/bookings/add-food-order',
     method: 'PATCH',
@@ -71,5 +84,12 @@ export const cancelFoodBooking = (id: string) => {
   return request({
     url: `/api/bookings/food/${id}/cancel`,
     method: 'PATCH'
+  }).then(res => res.data);
+};
+
+export const getBookingDetails = (id: string) => {
+  return request({
+    url: `/api/bookings/${id}`,
+    method: 'GET'
   }).then(res => res.data);
 };

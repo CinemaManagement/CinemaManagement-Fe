@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   ChevronLeft,
   CreditCard,
@@ -11,7 +11,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { movieApi } from "@/services/api/movieApi";
-import { createVnpayPaymentUrl } from "@/services/api/bookingApi";
+import { checkoutAndPay } from "@/services/api/bookingApi";
+import { cartApi } from "@/services/api/cartApi";
 import toast from "react-hot-toast";
 
 const formatVND = (amount: number) =>
@@ -19,17 +20,28 @@ const formatVND = (amount: number) =>
 
 const PaymentMethod = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
   const movieId = searchParams.get("movieId");
   const movieBookingId = searchParams.get("movieBookingId");
   const expiredAtParam = searchParams.get("expiredAt");
   const seats = searchParams.get("seats")?.split(",") || [];
   const ticketTotal = Number(searchParams.get("ticketTotal")) || 0;
-  const foodTotal = Number(searchParams.get("foodTotal")) || 0;
+
+  // Food items passed from FoodSelection via React Router state
+  const foodItems: { foodId: string; quantity: number }[] =
+    (location.state as any)?.foodItems ?? [];
 
   const [movie, setMovie] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  // finalAmount is returned by the checkout endpoint after food is attached
+  const [finalAmount, setFinalAmount] = useState<number | null>(null);
+
+  // Derive food total from passed state + ticket total for the pre-checkout display
+  // (exact amount will come back from backend after checkout)
+  const foodDisplayTotal = finalAmount !== null ? finalAmount - ticketTotal : 0;
 
   // Countdown timer
   useEffect(() => {
@@ -60,8 +72,6 @@ const PaymentMethod = () => {
     }
   }, [movieId]);
 
-  const grandTotal = ticketTotal + foodTotal;
-
   const handleVnpayPayment = async () => {
     if (!movieBookingId) {
       toast.error("Missing booking record. Please restart your booking.");
@@ -70,12 +80,16 @@ const PaymentMethod = () => {
 
     setSubmitting(true);
     try {
-      const res = await createVnpayPaymentUrl(movieBookingId);
+      // One call: creates FoodBooking (if any items) + generates VNPay URL
+      const res = await checkoutAndPay(movieBookingId, foodItems);
       if (res.paymentUrl) {
-        // Redirect browser to VNPay sandbox
+        // Clear the cart before redirecting (food is now committed to the booking)
+        try { await cartApi.clearCart(); } catch (_) { /* non-critical */ }
+        setFinalAmount(res.finalAmount);
         window.location.href = res.paymentUrl;
       } else {
         toast.error("Failed to create payment URL");
+        setSubmitting(false);
       }
     } catch (error: any) {
       console.error(error);
@@ -83,6 +97,8 @@ const PaymentMethod = () => {
       setSubmitting(false);
     }
   };
+
+  const grandTotal = ticketTotal + (foodItems.length > 0 ? foodDisplayTotal : 0);
 
   return (
     <div className="animate-in fade-in mx-auto min-h-screen max-w-5xl px-4 pt-12 pb-32 duration-700 sm:px-6 lg:px-8">
@@ -169,7 +185,7 @@ const PaymentMethod = () => {
             </div>
             <div className="flex-1">
               <h4 className="text-lg font-black tracking-tight text-white uppercase">
-                Safe & Secure
+                Safe &amp; Secure
               </h4>
               <p className="text-sm font-medium text-white/40">
                 All transactions are encrypted and processed through VNPay&apos;s certified payment gateway. Your financial data is never stored on our servers.
@@ -198,16 +214,17 @@ const PaymentMethod = () => {
                 </div>
               </div>
 
-              {foodTotal > 0 && (
+              {foodItems.length > 0 && (
                 <div className="space-y-4">
                   <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
-                    Food & Drinks
+                    Food &amp; Drinks
                   </p>
                   <div className="flex items-center justify-between text-sm font-bold text-white/80">
                     <span className="flex items-center gap-2">
-                      <ShoppingBag className="text-primary h-4 w-4" /> Food Order
+                      <ShoppingBag className="text-primary h-4 w-4" />
+                      {foodItems.reduce((sum, i) => sum + i.quantity, 0)} item(s)
                     </span>
-                    <span>{formatVND(foodTotal)}</span>
+                    <span className="text-white/40 text-xs italic">calculated at checkout</span>
                   </div>
                 </div>
               )}
@@ -216,11 +233,14 @@ const PaymentMethod = () => {
                 <div className="flex items-end justify-between">
                   <div className="space-y-1">
                     <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">
-                      Grand Total
+                      Tickets Total
                     </span>
                     <p className="text-4xl leading-none font-black text-white">
-                      {formatVND(grandTotal)}
+                      {formatVND(ticketTotal)}
                     </p>
+                    {foodItems.length > 0 && (
+                      <p className="text-xs text-white/40 mt-1">+ food price confirmed at checkout</p>
+                    )}
                   </div>
                 </div>
               </div>
