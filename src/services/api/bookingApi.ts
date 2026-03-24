@@ -111,3 +111,11 @@ export const getBookingById = (id: string) => {
     method: "GET",
   }).then((res) => res.data);
 };
+
+export const releaseSeat = (movieBookingId: string) => {
+  return request({
+    url: "/api/bookings/release-seat",
+    method: "PATCH",
+    data: {movieBookingId},
+  }).then((res) => res.data);
+};

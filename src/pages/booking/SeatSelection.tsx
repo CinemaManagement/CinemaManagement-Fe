@@ -4,7 +4,7 @@ import {ChevronLeft, Info, Ticket, Maximize, Minimize, Move, ChevronRight} from 
 import toast from "react-hot-toast";
 import type {Movie, Showtime} from "@/types/document";
 import {showtimeApi} from "@/services/api/showtimeApi";
-import {createMovieBooking} from "@/services/api/bookingApi";
+import {createMovieBooking, releaseSeat} from "@/services/api/bookingApi";
 
 const SeatSelection = () => {
   const {showtimeId} = useParams();
@@ -126,8 +126,8 @@ const SeatSelection = () => {
       setSelectedSeats([...selectedSeats, id]);
     }
   };
-  console.log("Selected Seat: ",selectedSeats);
-  
+  console.log("Selected Seat: ", selectedSeats);
+
   const totalPrice = selectedSeats.reduce((sum, id) => {
     return sum + getSeatPrice(id);
   }, 0);
@@ -148,7 +148,9 @@ const SeatSelection = () => {
       const movieBookingId = res._id || res.data?._id;
       const expiredAt = res.expiredAt || res.data?.expiredAt;
       toast.success("Thrones reserved! You have 10 minutes to grab snacks.");
-      navigate(`/food-selection?movieId=${movie?._id || movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}&seats=${selectedSeats.join(",")}&ticketTotal=${totalPrice}`);
+      navigate(
+        `/food-selection?movieId=${movie?._id || movieId}&showtimeId=${showtimeId}&movieBookingId=${movieBookingId}&expiredAt=${encodeURIComponent(expiredAt)}&seats=${selectedSeats.join(",")}&ticketTotal=${totalPrice}`,
+      );
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "Failed to reserve seats");
     } finally {
@@ -161,7 +163,15 @@ const SeatSelection = () => {
       <div className="mb-12 flex flex-col justify-between gap-8 md:flex-row md:items-center">
         <div className="flex items-center gap-6">
           <button
-            onClick={() => navigate(-1)}
+            onClick={async () => {
+              const movieBookingId = searchParams.get("movieBookingId") || undefined;
+              if (movieBookingId) {
+                await releaseSeat(movieBookingId).catch((err) => {
+                  toast.error(err.response.data.message);
+                });
+              }
+              navigate(`/movies/${movie?._id || movieId}`);
+            }}
             className="glass-card hover:text-primary shadow-inner-glossy rounded-2xl p-4 text-white/40 transition-all hover:scale-110 active:scale-95"
           >
             <ChevronLeft className="h-6 w-6" />
