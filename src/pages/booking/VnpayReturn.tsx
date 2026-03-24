@@ -2,7 +2,7 @@ import {useEffect, useState, useRef} from "react";
 import {useSearchParams, useNavigate} from "react-router-dom";
 import {CheckCircle2, XCircle, Loader2,TriangleAlert, House} from "lucide-react";
 import toast from "react-hot-toast";
-import {confirmPayment} from "@/services/api/bookingApi";
+import {confirmPayment, getBookingById} from "@/services/api/bookingApi";
 
 
 const API_BASE = import.meta.env.VITE_APP_API || "http://localhost:3800";
@@ -22,7 +22,52 @@ const VnpayReturn = () => {
 
     const verifyPayment = async () => {
       try {
-        // Forward all VNPay query params to backend for verification
+        // ── VietQR flow ───────────────────────────────────────────────
+        // When the user clicks "I've Paid" in the VietQR modal, confirmPayment
+        // was already called before the redirect. We just need to show success.
+        const isVietQR =
+          searchParams.get("success") === "true" &&
+          searchParams.get("bookingId") &&
+          !searchParams.get("vnp_TxnRef");
+
+        if (isVietQR) {
+          const bid = searchParams.get("bookingId") || "";
+          setBookingId(bid);
+          
+          // Check for a one-time session flag set by PaymentMethod
+          const sessionKey = `justPaid_${bid}`;
+          const isJustPaid = sessionStorage.getItem(sessionKey) === "true";
+          
+          try {
+            const res = await getBookingById(bid);
+            const booking = res.data || res;
+            if (booking.status === "PAID" || booking.status === "CHECKED_IN") {
+              if (isJustPaid) {
+                // Success case: FIRST time payment confirmation
+                setStatus("success");
+                setMessage("Bank transfer confirmed!");
+                toast.success("Payment confirmed!");
+                // CONSUME the flag so it shows "already-paid" on refresh/new tab
+                sessionStorage.removeItem(sessionKey);
+              } else {
+                // Already paid case: Revisit or copy-pasted link
+                setStatus("already-paid");
+                setMessage("This booking has already been paid for.");
+              }
+            } else {
+              setStatus("error");
+              setMessage("Booking found, but it is not marked as paid.");
+            }
+          } catch (e) {
+            console.error("VietQR verify error:", e);
+            setStatus("error");
+            setMessage("Failed to verify booking status.");
+          }
+          return;
+        }
+
+        // ── VNPay flow ────────────────────────────────────────────────
+        // Forward all VNPay query params to backend for signature verification
         const queryString = searchParams.toString();
 
         // Guard: if no VNPay params, don't call backend
