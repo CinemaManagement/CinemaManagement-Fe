@@ -32,6 +32,8 @@ const PaymentMethod = () => {
   // Food items passed from FoodSelection via React Router state
   const foodItems: { foodId: string; quantity: number }[] =
     (location.state as any)?.foodItems ?? [];
+  const foodTotal: number = (location.state as any)?.foodTotal ?? 0;
+
 
   const [movie, setMovie] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
@@ -219,7 +221,7 @@ const PaymentMethod = () => {
                       <ShoppingBag className="text-primary h-4 w-4" />
                       {foodItems.reduce((sum, i) => sum + i.quantity, 0)} item(s)
                     </span>
-                    <span className="text-white/40 text-xs italic">calculated at checkout</span>
+                    <span>{formatVND(foodTotal)}</span>
                   </div>
                 </div>
               )}
@@ -228,14 +230,11 @@ const PaymentMethod = () => {
                 <div className="flex items-end justify-between">
                   <div className="space-y-1">
                     <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">
-                      Tickets Total
+                      Total
                     </span>
                     <p className="text-4xl leading-none font-black text-white">
-                      {formatVND(ticketTotal)}
+                      {formatVND(ticketTotal + foodTotal)}
                     </p>
-                    {foodItems.length > 0 && (
-                      <p className="text-xs text-white/40 mt-1">+ food price confirmed at checkout</p>
-                    )}
                   </div>
                 </div>
               </div>

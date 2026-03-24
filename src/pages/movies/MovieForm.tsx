@@ -411,12 +411,12 @@ export const MovieForm = () => {
                   <div className="group relative">
                     <FieldIcon icon={Video} />
                     <input
-                      type="url"
+                      type="text"
                       name="trailerUrl"
                       value={formData.trailerUrl}
                       onChange={handleChange}
                       className={inputCls}
-                      placeholder="https://youtube.com/embed/..."
+                      placeholder="<iframe src={...}></iframe>"
                       required
                     />
                   </div>

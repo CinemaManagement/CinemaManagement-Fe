@@ -130,6 +130,7 @@ export const ShowtimeStatus = {
   ACTIVE: "ACTIVE",
   CANCELED: "CANCELED",
   FINISHED: "FINISHED",
+  SHOWING: "SHOWING",
 } as const;
 export type ShowtimeStatus = (typeof ShowtimeStatus)[keyof typeof ShowtimeStatus];
 

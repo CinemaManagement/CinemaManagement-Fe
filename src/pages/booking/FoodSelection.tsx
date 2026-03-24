@@ -15,6 +15,7 @@ import {movieApi} from "@/services/api/movieApi";
 import toast from "react-hot-toast";
 import {foodApi} from "@/services/api/foodApi";
 import {cartApi} from "@/services/api/cartApi";
+import { releaseSeat } from "@/services/api/bookingApi";
 
 
 const formatVND = (amount: number) =>
@@ -151,7 +152,7 @@ const FoodSelection = () => {
         ticketTotal: String(ticketPrice),
       });
       navigate(`/payment-method?${params.toString()}`, {
-        state: { foodItems: cartItems },
+        state: { foodItems: cartItems, foodTotal },
       });
     } catch (error: any) {
       console.error(error);
@@ -179,12 +180,13 @@ const FoodSelection = () => {
       <div className="mb-16 flex flex-col justify-between gap-8 md:flex-row md:items-center">
         <div className="flex items-center gap-6">
           <button
-            onClick={() => {
+            onClick={async () => {
               const params = new URLSearchParams({
                 movieId: movieId || "",
                 movieBookingId: movieBookingId || "",
                 seats: seats.join(","),
               });
+              await releaseSeat(movieBookingId || "");
               navigate(`/booking/${showtimeId}?${params.toString()}`);
             }}
             className="glass-card hover:text-primary shadow-inner-glossy rounded-2xl p-4 text-white/40 transition-all hover:scale-110 active:scale-95"
