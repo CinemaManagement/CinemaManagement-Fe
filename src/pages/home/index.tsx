@@ -34,6 +34,8 @@ const Home = () => {
   const nowShowingMovies = movies.filter(m => m.showingStatus === ShowingStatus.NOW_SHOWING);
   const featuredMovie = nowShowingMovies[0] || movies[0];
 
+  console.log("featuredMovie", movies);
+
   return (
     <div className="flex flex-col gap-16 pb-20 overflow-hidden">
       {featuredMovie && (
@@ -85,7 +87,6 @@ const Home = () => {
         </section>
       )}
 
-      {/* Movie Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex items-end justify-between mb-12">
           <div className="space-y-2">
@@ -160,33 +161,6 @@ const Home = () => {
               </div>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* New Cinema Experience Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-10">
-        <div className="glass-card rounded-[3rem] p-12 md:p-24 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-primary/10 to-transparent pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-16">
-             <div className="flex-1 space-y-8">
-                <h2 className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter leading-none italic">
-                  Premium <span className="text-gradient-gold">Imax</span> Experience
-                </h2>
-                <p className="text-xl text-white/60 font-medium leading-relaxed max-w-xl">
-                  Crystal clear visuals and earth-shaking sound. The most immersive Way to witness cinematic masterpieces.
-                </p>
-                <div className="flex gap-4">
-                   <button className="px-8 py-4 bg-primary text-primary-foreground font-black rounded-2xl btn-glossy uppercase tracking-widest">Explore Imax</button>
-                   <button className="px-8 py-4 bg-white/5 border border-white/10 text-white font-black rounded-2xl hover:bg-white/10 transition-all uppercase tracking-widest">Upcoming List</button>
-                </div>
-             </div>
-             <div className="flex-1 flex justify-center">
-                <div className="relative w-full max-w-sm aspect-square bg-linear-to-br from-primary/30 to-background rounded-[3rem] flex items-center justify-center p-8 border border-white/10 shadow-inner-gold group-hover:scale-105 transition-transform duration-700">
-                   <div className="text-8xl font-black text-primary/20 absolute select-none">IMAX</div>
-                   <TrendingUp className="w-32 h-32 text-primary drop-shadow-[0_0_20px_rgba(var(--primary),0.5)]" />
-                </div>
-             </div>
-          </div>
         </div>
       </section>
     </div>

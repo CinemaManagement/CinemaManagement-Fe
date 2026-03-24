@@ -104,7 +104,6 @@ const ShowtimesPage = () => {
       <div className="flex h-screen w-full items-center justify-center bg-[#020202]">
         <div className="relative h-20 w-20">
           <div className="absolute inset-0 rounded-full border-2 border-[#d4af37]/20" />
-          <div className="absolute inset-0 animate-spin rounded-full border-t-2 border-[#d4af37]" />
           <div className="absolute inset-4 flex items-center justify-center rounded-full bg-[#d4af37]/5">
             <Zap className="h-6 w-6 animate-pulse text-[#d4af37]" />
           </div>

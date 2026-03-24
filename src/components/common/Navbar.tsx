@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store';
 import { logout } from '../../store/slices/authSlice';
 import { menuRouterItems } from '../../layouts/Router';
+import URL from '@/constants/url';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +14,7 @@ export const Navbar = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    navigate(URL.Home);
   };
 
   const navLinks = menuRouterItems.filter((item) => {
@@ -36,8 +37,7 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.key}
@@ -49,7 +49,7 @@ export const Navbar = () => {
             ))}
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-4">
             <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
               <Search className="w-5 h-5" />
             </button>
@@ -84,8 +84,7 @@ export const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="lg:hidden flex items-center">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-md text-muted-foreground hover:text-primary hover:bg-accent/20"
@@ -96,9 +95,8 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-background border-b border-border p-4 animate-in slide-in-from-top-4 duration-300">
+        <div className="lg:hidden bg-background border-b border-border p-4 animate-in slide-in-from-top-4 duration-300">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <Link

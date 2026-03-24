@@ -1,3 +1,4 @@
+import URL from "@/constants/url";
 import axios, {type AxiosRequestConfig} from "axios";
 
 export const instanceAxios = axios.create({
@@ -65,10 +66,8 @@ instanceAxios.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Since the refresh token is in a cookie, we don't need the expired access token in the header.
-        // This also avoids CORS issues if the backend doesn't explicitly allow Authorization header in CORS.
         const res = await instanceAxios.get("/auth/refresh");
-        const {accessToken} = res.data.data || res.data; // Handle both direct {accessToken} and nested {data: {accessToken}}
+        const {accessToken} = res.data.data || res.data;
 
         if (accessToken) {
           localStorage.setItem("token", accessToken);
@@ -86,7 +85,7 @@ instanceAxios.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         localStorage.removeItem("token");
-        window.location.href = "/login";
+        window.location.href = URL.Login;
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

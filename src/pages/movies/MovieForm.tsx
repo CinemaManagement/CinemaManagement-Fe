@@ -198,7 +198,6 @@ export const MovieForm = () => {
   return (
     <div className="bg-background min-h-screen pt-20 pb-16 text-white">
       <div className="mx-auto max-w-6xl px-6">
-        {/* Header */}
         <div className="mb-8">
           <Link
             to="/movies"
@@ -221,10 +220,8 @@ export const MovieForm = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="flex items-start gap-6">
-            {/* ── LEFT SIDEBAR ── */}
-            <div className="sticky top-24 w-56 flex-shrink-0 space-y-4">
-              {/* Poster preview */}
-              <div className="relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-white/[0.03]">
+            <div className="sticky top-24 w-56 shrink-0 space-y-4">
+              <div className="relative flex aspect-2/3 items-center justify-center overflow-hidden rounded-2xl border border-white/5 bg-white/3">
                 {formData.posterUrl ? (
                   <img
                     src={formData.posterUrl}

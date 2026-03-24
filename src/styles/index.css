@@ -120,3 +120,7 @@
     background-image: radial-gradient(circle at 50% -20%, oklch(0.2 0.05 260 / 0.15), transparent 80%);
   }
 }
+
+button {
+  @apply cursor-pointer;
+}

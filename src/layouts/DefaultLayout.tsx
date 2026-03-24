@@ -11,7 +11,7 @@ export default function DefaultLayout(props: DefaultLayoutProps) {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground font-sans">
       <Navbar />
-      <main className="pt-24">{children}</main>
+      <main className="pt-14">{children}</main>
       <footer className="bg-card border-t border-border py-12 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

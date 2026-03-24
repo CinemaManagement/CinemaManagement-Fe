@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {useParams, useNavigate} from "react-router-dom";
 import {useCallback, useState, useEffect} from "react";
 import {
@@ -29,7 +30,7 @@ interface PersonItem {
   _id?: string;
 }
 
-type Showtime = any; // Use any for local populated showtime to avoid complex type conversion
+type Showtime = any;
 
 interface ExtendedMovie extends Omit<Partial<Movie>, "director" | "actors"> {
   id?: string;
@@ -398,14 +399,13 @@ const MovieDetail = () => {
                 </div>
               </div>
 
-              {/* Theater Location (Mock) */}
               <div className="mb-10">
                 <div className="mb-6 flex items-center justify-between">
                   <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
                     CineLux Cinema
                   </p>
                   <span className="flex items-center gap-2 text-xs font-bold text-white/80">
-                    <MapPin className="text-primary h-4 w-4" /> Central Mall
+                    <MapPin className="text-primary h-4 w-4" /> SDN Mall
                   </span>
                 </div>
 
@@ -489,34 +489,40 @@ const MovieDetail = () => {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 p-6 transition-all hover:bg-white/10">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
-                      Select Stars
-                    </p>
-                    <p className="text-xs font-medium text-white/40">How would you rate this?</p>
+                {movie.showingStatus !== ShowingStatus.COMING_SOON ? (
+                  <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 p-6 transition-all hover:bg-white/10">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-primary text-[10px] font-black tracking-[0.3em] uppercase">
+                        Select Stars
+                      </p>
+                      <p className="text-xs font-medium text-white/40">How would you rate this?</p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          disabled={isRating}
+                          onClick={() => handleRate(Number(star))}
+                          onMouseEnter={() => setHover(star)}
+                          onMouseLeave={() => setHover(0)}
+                          className="transition-all hover:scale-125 disabled:opacity-50"
+                        >
+                          <Star
+                            className={`h-6 w-6 transition-all ${
+                              star <= (hover || rating)
+                                ? "fill-[#d4af37] text-[#d4af37] drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]"
+                                : "text-white/20"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        disabled={isRating}
-                        onClick={() => handleRate(Number(star))}
-                        onMouseEnter={() => setHover(star)}
-                        onMouseLeave={() => setHover(0)}
-                        className="transition-all hover:scale-125 disabled:opacity-50"
-                      >
-                        <Star
-                          className={`h-6 w-6 transition-all ${
-                            star <= (hover || rating)
-                              ? "fill-[#d4af37] text-[#d4af37] drop-shadow-[0_0_12px_rgba(212,175,55,0.6)]"
-                              : "text-white/20"
-                          }`}
-                        />
-                      </button>
-                    ))}
+                ) : (
+                  <div className="flex items-center justify-center text-sm font-black text-gray-500">
+                    Coming soon...
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

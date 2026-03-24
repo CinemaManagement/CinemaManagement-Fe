@@ -33,6 +33,13 @@ import CheckInConfirm from "@/pages/cinema/CheckIn";
 
 export const menuRouterItems: ItemRouteType[] = [
   {
+    key: URL.Home,
+    components: <Home />,
+    layout: "default",
+    title: "Home",
+    isMenu: true,
+  },
+  {
     key: URL.Movies,
     components: <Movies />,
     layout: "default",
