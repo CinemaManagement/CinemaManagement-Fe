@@ -6,7 +6,6 @@ const BookingSuccess = () => {
     <div className="min-h-[80vh] flex items-center justify-center p-4 py-20 animate-in fade-in zoom-in duration-700">
       <div className="max-w-4xl w-full flex flex-col md:flex-row items-stretch glass-card rounded-[3rem] overflow-hidden shadow-2xl shadow-inner-glossy">
         
-        {/* Left Side: Success Message */}
         <div className="flex-1 p-12 md:p-20 flex flex-col items-center text-center justify-center bg-linear-to-b from-primary/10 to-transparent">
           <div className="w-24 h-24 bg-primary text-primary-foreground rounded-full flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(var(--primary),0.5)] btn-glossy animate-bounce">
             <CheckCircle2 className="w-12 h-12" />
