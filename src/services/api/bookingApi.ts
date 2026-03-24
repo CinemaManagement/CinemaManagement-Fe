@@ -119,3 +119,15 @@ export const releaseSeat = (movieBookingId: string) => {
     data: {movieBookingId},
   }).then((res) => res.data);
 };
+
+export const getVietQRInfo = (
+  movieBookingId: string,
+  foodItems: {foodId: string; quantity: number}[],
+  discountCode?: string,
+) => {
+  return request({
+    url: `/api/bookings/${movieBookingId}/get-vietqr-info`,
+    method: "POST",
+    data: {foodItems, ...(discountCode && {discountCode})},
+  }).then((res) => res.data);
+};
