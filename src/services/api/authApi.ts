@@ -1,45 +1,51 @@
-import request from '../api';
+import request from "../api";
 
 export const authApi = {
   login: (data: Record<string, unknown>) => {
     return request({
-      url: '/auth/login',
-      method: 'POST',
+      url: "/auth/login",
+      method: "POST",
       data,
     });
   },
   register: (data: Record<string, unknown>) => {
     return request({
-      url: '/auth/register',
-      method: 'POST',
+      url: "/auth/register",
+      method: "POST",
       data,
     });
   },
   logout: () => {
     return request({
-      url: '/auth/logout',
-      method: 'POST',
+      url: "/auth/logout",
+      method: "POST",
     });
   },
   forgotPassword: (data: Record<string, unknown>) => {
     return request({
-      url: '/auth/forgot-password',
-      method: 'POST',
+      url: "/auth/forgot-password",
+      method: "POST",
       data,
     });
   },
   resetPassword: (data: Record<string, unknown>) => {
     return request({
-      url: '/auth/reset-password',
-      method: 'POST',
+      url: "/auth/reset-password",
+      method: "POST",
       data,
     });
   },
   changePassword: (data: Record<string, unknown>) => {
     return request({
-      url: '/auth/change-pass',
-      method: 'POST',
+      url: "/auth/change-pass",
+      method: "POST",
       data,
+    });
+  },
+  refreshToken: () => {
+    return request({
+      url: "/auth/refresh",
+      method: "GET",
     });
   },
 };
