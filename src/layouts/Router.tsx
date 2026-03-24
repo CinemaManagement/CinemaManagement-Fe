@@ -1,35 +1,37 @@
-/* eslint-disable react-refresh/only-export-components */
 import {Route, Routes} from "react-router-dom";
+import {Suspense, lazy} from "react";
 
 import URL from "@/constants/url";
 import type {ItemRouteType} from "@/types/routes/router.type";
 import DefaultLayout from "./DefaultLayout";
 import ProtectedRoute from "./ProtectedRoute";
-
-import Login from "@/pages/login";
-import NotFound from "@/pages/404";
-import MovieDetail from "@/pages/movies/MovieDetail";
-import Movies from "@/pages/movies";
-import Register from "@/pages/register";
-import ForgotPassword from "@/pages/forgot-password";
-import Home from "@/pages/home";
-import MovieForm from "@/pages/movies/MovieForm";
-import SeatSelection from "@/pages/booking/SeatSelection";
-import FoodSelection from "@/pages/booking/FoodSelection";
-import FoodMenu from "@/pages/food";
-import Profile from "@/pages/profile";
-import BookingSuccess from "@/pages/booking/Success";
-import AdminDashboard from "@/pages/admin/Dashboard";
-import Showtimes from "@/pages/showtimes";
+import {Loader2} from "lucide-react";
 import {UserRole} from "@/types/document";
-import FoodManagement from "@/pages/foods/FoodManagement";
-import RoomManagement from "@/pages/rooms/RoomManagement";
-import RoomForm from "@/pages/rooms/RoomForm";
-import RoomDetail from "@/pages/rooms/RoomDetail";
-import PaymentMethod from "@/pages/booking/PaymentMethod";
-import VnpayReturn from "@/pages/booking/VnpayReturn";
-import AllBookings from "@/pages/cinema/AllBookings";
-import CheckInConfirm from "@/pages/cinema/CheckIn";
+
+// Lazy load all pages
+const Login = lazy(() => import("@/pages/login"));
+const NotFound = lazy(() => import("@/pages/404"));
+const MovieDetail = lazy(() => import("@/pages/movies/MovieDetail"));
+const Movies = lazy(() => import("@/pages/movies"));
+const Register = lazy(() => import("@/pages/register"));
+const ForgotPassword = lazy(() => import("@/pages/forgot-password"));
+const Home = lazy(() => import("@/pages/home"));
+const MovieForm = lazy(() => import("@/pages/movies/MovieForm"));
+const SeatSelection = lazy(() => import("@/pages/booking/SeatSelection"));
+const FoodSelection = lazy(() => import("@/pages/booking/FoodSelection"));
+const FoodMenu = lazy(() => import("@/pages/food"));
+const Profile = lazy(() => import("@/pages/profile"));
+const BookingSuccess = lazy(() => import("@/pages/booking/Success"));
+const AdminDashboard = lazy(() => import("@/pages/admin/Dashboard"));
+const Showtimes = lazy(() => import("@/pages/showtimes"));
+const FoodManagement = lazy(() => import("@/pages/foods/FoodManagement"));
+const RoomManagement = lazy(() => import("@/pages/rooms/RoomManagement"));
+const RoomForm = lazy(() => import("@/pages/rooms/RoomForm"));
+const RoomDetail = lazy(() => import("@/pages/rooms/RoomDetail"));
+const PaymentMethod = lazy(() => import("@/pages/booking/PaymentMethod"));
+const VnpayReturn = lazy(() => import("@/pages/booking/VnpayReturn"));
+const AllBookings = lazy(() => import("@/pages/cinema/AllBookings"));
+const CheckInConfirm = lazy(() => import("@/pages/cinema/CheckIn"));
 
 export const menuRouterItems: ItemRouteType[] = [
   {
@@ -123,21 +125,29 @@ const allRouters = [...menuRouterItems, ...publicRouterItems, ...detailRouterIte
 
 export default function Routers() {
   return (
-    <Routes>
-      {allRouters.map((item) => {
-        let element = item.components;
+    <Suspense 
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <Routes>
+        {allRouters.map((item) => {
+          let element = item.components;
 
-        // Wrap with ProtectedRoute only if roles are specified
-        if (item.roles && item.roles.length > 0) {
-          element = <ProtectedRoute>{element}</ProtectedRoute>;
-        }
+          // Wrap with ProtectedRoute only if roles are specified
+          if (item.roles && item.roles.length > 0) {
+            element = <ProtectedRoute>{element}</ProtectedRoute>;
+          }
 
-        if (item.layout === "default") {
-          element = <DefaultLayout>{element}</DefaultLayout>;
-        }
+          if (item.layout === "default") {
+            element = <DefaultLayout>{element}</DefaultLayout>;
+          }
 
-        return <Route key={item.key} path={item.key} element={element} />;
-      })}
-    </Routes>
+          return <Route key={item.key} path={item.key} element={element} />;
+        })}
+      </Routes>
+    </Suspense>
   );
 }
