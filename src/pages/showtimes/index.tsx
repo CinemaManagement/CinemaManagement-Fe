@@ -308,7 +308,7 @@ const CyberMovieCard = ({
           </div>
           <div className="flex flex-wrap gap-4">
             {showtimes.map((st) => (
-              <HolographicSlot key={st._id} showtime={st} />
+              <HolographicSlot key={st._id} showtime={st} navigate={navigate} />
             ))}
           </div>
         </div>
@@ -317,28 +317,72 @@ const CyberMovieCard = ({
   );
 };
 
-const HolographicSlot = ({showtime}: {showtime: Showtime}) => {
+const HolographicSlot = ({
+  showtime,
+  navigate,
+}: {
+  showtime: Showtime;
+  navigate: (path: string) => void;
+}) => {
   const start = formatTime(showtime.startTime);
   const room = showtime.cinemaRoomId as CinemaRoom;
+  const status = showtime.status;
+
+  const getStatusStyles = () => {
+    switch (status) {
+      case "NOW_SHOWING":
+        return "bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20";
+      case "CANCELLED":
+        return "bg-red-500/10 border-red-500/30 text-red-400 cursor-not-allowed opacity-50";
+      case "FINISHED":
+        return "bg-green-500/10 border-green-500/30 text-green-400 cursor-not-allowed opacity-50";
+      default:
+        return "bg-white/2 border-white/10 hover:bg-[#d4af37] hover:border-[#d4af37] cursor-pointer";
+    }
+  };
+
+  const handleBooking = (e: React.MouseEvent) => {
+    if (status !== "ACTIVE") {
+      e.preventDefault();
+      return;
+    }
+    navigate(`/booking/${showtime._id}`);
+  };
 
   return (
-    <a
-      href={`/booking/${showtime._id}`}
-      className="group/slot relative flex h-20 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/2 px-4 transition-all duration-500 hover:border-[#d4af37] hover:bg-[#d4af37]"
+    <div
+      onClick={handleBooking}
+      className={`group/slot relative flex h-20 flex-col items-center justify-center overflow-hidden rounded-2xl border transition-all duration-500 px-4 ${getStatusStyles()}`}
     >
       <div className="relative z-10 flex flex-col items-center gap-1">
-        <span className="text-xl font-black tracking-tight text-white transition-colors group-hover/slot:text-black">
+        <span
+          className={`text-xl font-black tracking-tight transition-colors ${status === "ACTIVE" ? "text-white group-hover/slot:text-black" : ""}`}
+        >
           {start}
         </span>
-        <span className="text-[9px] font-black tracking-widest text-white/20 uppercase group-hover/slot:text-black/60">
+        <span
+          className={`text-[9px] font-black tracking-widest uppercase ${status === "ACTIVE" ? "text-white/20 group-hover/slot:text-black/60" : "opacity-60"}`}
+        >
           {room?.roomName || "DX-1"}
         </span>
       </div>
 
+      {status !== "ACTIVE" && (
+        <div className="absolute top-1 right-2">
+          <span className="text-[6px] font-black tracking-tighter opacity-40 uppercase">
+            {status.replace("_", " ")}
+          </span>
+        </div>
+      )}
+
       {/* Decorative scan line */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover/slot:opacity-100" />
-      <div className="absolute top-0 left-0 h-0.5 w-full animate-pulse bg-white/20" />
-    </a>
+      {status === "ACTIVE" && (
+        <>
+          <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover/slot:opacity-100" />
+          <div className="absolute top-0 left-0 h-0.5 w-full animate-pulse bg-white/20" />
+        </>
+      )}
+    </div>
   );
 };
 
