@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {useEffect, useState} from "react";
 import {useSearchParams, useNavigate} from "react-router-dom";
 import {CheckCircle2, XCircle, Loader2,TriangleAlert, House} from "lucide-react";
 import toast from "react-hot-toast";
-import {confirmPayment, getBookingDetails} from "@/services/api/bookingApi";
+import {confirmPayment} from "@/services/api/bookingApi";
+
 
 const API_BASE = import.meta.env.VITE_APP_API || "http://localhost:3800";
 
@@ -35,6 +35,7 @@ const VnpayReturn = () => {
         console.log(data);
         const bookingId = searchParams.get("vnp_TxnRef") || "";
         const transactionNo = searchParams.get("vnp_TransactionNo");
+
         setBookingId(bookingId);
 
         console.log("VNPay verification response:", res.status, data);
@@ -46,17 +47,26 @@ const VnpayReturn = () => {
         }
 
         if (data.success) {
-          const booking = await getBookingDetails(bookingId);
-          if (booking.status === "PAID") {
-            setStatus("already-paid")
+          if (data.message === "Booking already paid") {
+            setStatus("already-paid");
+            setMessage("This booking has already been paid for.");
           } else {
             setStatus("success");
             setMessage(data.message || "Payment successful!");
-            setBookingId(data.bookingId || "");
-            const {finalAmount} = await confirmPayment(bookingId,{method:"VNPAY", transactionId:transactionNo||'', });
-            setFinalAmount(finalAmount);
-            
             toast.success("Payment confirmed!");
+          }
+          setBookingId(data.bookingId || "");
+          if (data.finalAmount) {
+            setFinalAmount(data.finalAmount.toString());
+          }
+          
+          try {
+            await confirmPayment(data.bookingId || bookingId, {
+              method: "VNPAY",
+              transactionId: transactionNo || "",
+            });
+          } catch (e) {
+            console.error("Optional confirmPayment failed:", e);
           }
         } else {
           setStatus("error");
