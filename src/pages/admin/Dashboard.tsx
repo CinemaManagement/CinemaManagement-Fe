@@ -101,7 +101,12 @@ const AdminDashboard = () => {
     user: tx.userId?.email || "Unknown Customer",
     movie: tx.showtimeId?.movieId?.title || "N/A",
     amount: `$${tx.totalAmount.toLocaleString()}`,
-    status: tx.status === "PAID" ? "Completed" : tx.status === "HELD" ? "Pending" : "Canceled",
+    status:
+      tx.status === "CHECKED_IN" || tx.status === "PAID"
+        ? "Completed"
+        : tx.status === "HELD"
+          ? "Pending"
+          : "Canceled",
     date: dayjs(tx.createdAt).fromNow(),
   }));
 
