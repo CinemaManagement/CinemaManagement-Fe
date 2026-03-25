@@ -1,9 +1,9 @@
-import {useState, useEffect, useMemo} from "react";
-import {useNavigate} from "react-router-dom";
-import {showtimeApi} from "@/services/api/showtimeApi";
-import type {Showtime, Movie, CinemaRoom} from "@/types/document";
-import {Clock, Film, Star, Play, Calendar, Zap} from "lucide-react";
-import {formatTime} from "@/lib/utils";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { showtimeApi } from "@/services/api/showtimeApi";
+import type { Showtime, Movie, CinemaRoom } from "@/types/document";
+import { Clock, Film, Star, Play, Calendar, Zap } from "lucide-react";
+import { formatTime } from "@/lib/utils";
 
 function getWeekDays(): Date[] {
   const days: Date[] = [];
@@ -31,7 +31,7 @@ const VI_WEEKDAY_FULL = [
 function formatDayLabel(date: Date) {
   const wd = VI_WEEKDAY_SHORT[date.getDay()];
   const dd = String(date.getDate()).padStart(2, "0");
-  const moonthShort = date.toLocaleString("en-US", {month: "short"}).toUpperCase();
+  const moonthShort = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
   return {
     weekday: wd,
     date: dd,
@@ -87,7 +87,7 @@ const ShowtimesPage = () => {
       if (!movie || !movie._id) continue;
       const key = movie._id;
       if (!map.has(key)) {
-        map.set(key, {movie, showtimes: []});
+        map.set(key, { movie, showtimes: [] });
       }
       map.get(key)!.showtimes.push(st);
     }
@@ -139,17 +139,16 @@ const ShowtimesPage = () => {
           <div className="no-scrollbar relative flex w-full snap-x overflow-x-auto pb-10">
             <div className="flex gap-4 px-8 pt-2">
               {weekDays.map((day) => {
-                const {weekday, date, month} = formatDayLabel(day);
+                const { weekday, date, month } = formatDayLabel(day);
                 const isActive = isSameDay(day, selectedDay);
                 return (
                   <button
                     key={day.toISOString()}
                     onClick={() => setSelectedDay(day)}
-                    className={`flex min-w-[70px] transform snap-center flex-col items-center rounded-xl border py-3 transition-all active:scale-95 ${
-                      isActive
+                    className={`flex min-w-[70px] transform snap-center flex-col items-center rounded-xl border py-3 transition-all active:scale-95 ${isActive
                         ? "btn-glossy z-10 scale-110 border-[#d4af37] bg-[#d4af37] text-black shadow-[0_0_30px_rgba(212,175,55,0.4)]"
                         : "shadow-inner-glossy border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
-                    } `}
+                      } `}
                   >
                     <span
                       className={`mb-1 text-[9px] font-black tracking-widest uppercase ${isActive ? "opacity-60" : "opacity-60"}`}
@@ -196,7 +195,7 @@ const ShowtimesPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-12">
-            {grouped.map(({movie, showtimes}) => (
+            {grouped.map(({ movie, showtimes }) => (
               <CyberMovieCard
                 key={movie._id}
                 movie={movie}
@@ -330,10 +329,10 @@ const HolographicSlot = ({
 
   const getStatusStyles = () => {
     switch (status) {
-      case "NOW_SHOWING":
-        return "bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20";
-      case "CANCELLED":
-        return "bg-red-500/10 border-red-500/30 text-red-400 cursor-not-allowed opacity-50";
+      // case "NOW_SHOWING":
+      //   return "bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20";
+      // case "CANCELLED":
+      //   return "bg-red-500/10 border-red-500/30 text-red-400 cursor-not-allowed opacity-50";
       case "FINISHED":
         return "bg-green-500/10 border-green-500/30 text-green-400 cursor-not-allowed opacity-50";
       default:
