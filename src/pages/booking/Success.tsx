@@ -58,10 +58,9 @@ const BookingSuccess = () => {
     <div className="animate-in fade-in zoom-in flex min-h-[80vh] items-center justify-center p-4 py-20 duration-700">
       <div className="glass-card shadow-inner-glossy flex w-full max-w-4xl flex-col items-stretch overflow-hidden rounded-[3rem] shadow-2xl md:flex-row">
         
-        {/* Left Side: Success Message */}
-        <div className="from-primary/10 flex flex-1 flex-col items-center justify-center bg-linear-to-b to-transparent p-12 md:p-20 text-center">
-          <div className="bg-primary text-primary-foreground btn-glossy mb-8 flex h-24 w-24 animate-bounce items-center justify-center rounded-full shadow-[0_0_50px_rgba(var(--primary),0.5)]">
-            <CheckCircle2 className="h-12 w-12" />
+        <div className="flex-1 p-12 md:p-20 flex flex-col items-center text-center justify-center bg-linear-to-b from-primary/10 to-transparent">
+          <div className="w-24 h-24 bg-primary text-primary-foreground rounded-full flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(var(--primary),0.5)] btn-glossy animate-bounce">
+            <CheckCircle2 className="w-12 h-12" />
           </div>
           
           <h1 className="italic mb-4 text-4xl font-black tracking-tighter text-white uppercase md:text-5xl">

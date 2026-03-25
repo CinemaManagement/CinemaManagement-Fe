@@ -91,7 +91,7 @@ const AllBookings = () => {
               Booking <span className="text-primary italic">Management</span>
             </h1>
             <p className="text-white/40 font-medium tracking-widest uppercase text-xs">
-              Monitor and verify all cinema activity in real-time
+              Monitor and verify all cinema activity.
             </p>
           </div>
           
@@ -226,7 +226,7 @@ const AllBookings = () => {
                         <div className="flex items-center justify-end gap-3">
                            {booking.status === "PAID" && (
                              <button 
-                               onClick={() => handleCheckInNow(booking._id)}
+                               onClick={() => handleCheckInNow(booking.bookingCode)}
                                className="bg-primary hover:bg-white text-black px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest uppercase shadow-xl transition-all active:scale-95"
                              >
                                Check-in
